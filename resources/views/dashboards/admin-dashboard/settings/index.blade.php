@@ -1,124 +1,157 @@
 <x-app-layout>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="py-10">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
-            {{-- HEADER --}}
-            <div class="flex items-center justify-between">
+            {{-- HEADER SECTION --}}
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">System Settings</h2>
-                    <p class="text-sm text-gray-500">Configure system preferences and security</p>
+                    <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">System Settings</h2>
+                    <p class="text-sm text-slate-500 font-medium italic">Configure system preferences, security, and global voting rules.</p>
                 </div>
-                {{-- Global Save Button --}}
-                <button type="submit" form="settings-form" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    Save Changes
-                </button>
+                <div class="flex items-center gap-3">
+                    <button type="submit" form="settings-form"
+                            class="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">
+                        Save Preferences
+                    </button>
+                </div>
             </div>
 
+            {{-- SUCCESS ALERT --}}
             @if(session('success'))
-                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-md">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-green-700">{{ session('success') }}</p>
-                        </div>
-                    </div>
+                <div class="bg-emerald-50 border border-emerald-100 text-emerald-700 px-6 py-4 rounded-2xl font-bold text-sm">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        {{ session('success') }}
+                    </span>
                 </div>
             @endif
 
-            <form id="settings-form" action="{{ route('dashboard.settings.update') }}" method="POST">
+            {{-- FORM START --}}
+            <form id="settings-form" method="POST" action="{{ route('admin.settings.update') }}">
                 @csrf
                 @method('PUT')
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                    {{-- CARD 1: ELECTION SETTINGS --}}
-                    <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
-                        <div class="px-6 py-5 border-b border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-900">Election Settings</h3>
-                            <p class="text-sm text-gray-500">Default election configurations</p>
+                    {{-- ELECTION RULES --}}
+                    <div class="bg-white shadow-sm border border-slate-100 rounded-[2.5rem] p-8 space-y-8">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-1.5 h-5 bg-indigo-600 rounded-full"></div>
+                            <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Election Rules</h3>
                         </div>
-                        
-                        <div class="p-6 space-y-6">
-                            {{-- Setting: Allow Vote Changes --}}
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <label for="allow_vote_changes" class="font-medium text-gray-900 cursor-pointer">Allow Vote Changes</label>
-                                    <p class="text-sm text-gray-500">Let voters change their vote before deadline</p>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="hidden" name="allow_vote_changes" value="0">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="allow_vote_changes" id="allow_vote_changes" value="1" class="sr-only peer" 
-                                            {{ $settings['allow_vote_changes']->value == '1' ? 'checked' : '' }}>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                                    </label>
-                                </div>
-                            </div>
 
-                            {{-- Setting: Real-time Results --}}
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <label for="real_time_results" class="font-medium text-gray-900 cursor-pointer">Real-time Results</label>
-                                    <p class="text-sm text-gray-500">Show live vote counts to public</p>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="hidden" name="real_time_results" value="0">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="real_time_results" id="real_time_results" value="1" class="sr-only peer"
-                                            {{ $settings['real_time_results']->value == '1' ? 'checked' : '' }}>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                                    </label>
-                                </div>
+                        {{-- Allow Vote Changes --}}
+                        <div class="flex justify-between items-center p-4 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white transition-colors">
+                            <div class="max-w-[70%]">
+                                <p class="font-black text-slate-800 uppercase text-[11px] tracking-tight mb-1">Allow Vote Changes</p>
+                                <p class="text-[10px] text-slate-400 font-medium leading-tight">Allows voters to modify their ballots before the election deadline.</p>
+                            </div>
+                            <div class="relative inline-block w-12 h-6">
+                                <input type="hidden" name="allow_vote_changes" value="0">
+                                <input type="checkbox" name="allow_vote_changes" value="1"
+                                       @checked(($settings['allow_vote_changes'] ?? '0') == '1')
+                                       class="peer appearance-none w-12 h-6 rounded-full bg-slate-200 checked:bg-indigo-600 cursor-pointer transition-colors duration-200">
+                                <span class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-6 pointer-events-none"></span>
+                            </div>
+                        </div>
+
+                        {{-- Real-time Results --}}
+                        <div class="flex justify-between items-center p-4 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white transition-colors">
+                            <div class="max-w-[70%]">
+                                <p class="font-black text-slate-800 uppercase text-[11px] tracking-tight mb-1">Real-time Results</p>
+                                <p class="text-[10px] text-slate-400 font-medium leading-tight">Displays live vote tallies on the voter's dashboard during the election.</p>
+                            </div>
+                            <div class="relative inline-block w-12 h-6">
+                                <input type="hidden" name="real_time_results" value="0">
+                                <input type="checkbox" name="real_time_results" value="1"
+                                       @checked(($settings['real_time_results'] ?? '0') == '1')
+                                       class="peer appearance-none w-12 h-6 rounded-full bg-slate-200 checked:bg-indigo-600 cursor-pointer transition-colors duration-200">
+                                <span class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-6 pointer-events-none"></span>
                             </div>
                         </div>
                     </div>
 
-                    {{-- CARD 2: SECURITY SETTINGS --}}
-                    <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
-                        <div class="px-6 py-5 border-b border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-900">Security Settings</h3>
-                            <p class="text-sm text-gray-500">System security configurations</p>
+                    {{-- SECURITY & ACCESS --}}
+                    <div class="bg-white shadow-sm border border-slate-100 rounded-[2.5rem] p-8 space-y-8">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-1.5 h-5 bg-rose-500 rounded-full"></div>
+                            <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Security & Access</h3>
                         </div>
 
-                        <div class="p-6 space-y-6">
-                            {{-- Setting: 2FA --}}
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <label for="require_2fa" class="font-medium text-gray-900 cursor-pointer">Two-Factor Authentication</label>
-                                    <p class="text-sm text-gray-500">Require 2FA for all admin accounts</p>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="hidden" name="require_2fa" value="0">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="require_2fa" id="require_2fa" value="1" class="sr-only peer"
-                                            {{ $settings['require_2fa']->value == '1' ? 'checked' : '' }}>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                                    </label>
-                                </div>
+                        {{-- Require Voter 2FA --}}
+                        <div class="flex justify-between items-center p-4 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white transition-colors">
+                            <div class="max-w-[70%]">
+                                <p class="font-black text-slate-800 uppercase text-[11px] tracking-tight mb-1">Require Voter 2FA</p>
+                                <p class="text-[10px] text-slate-400 font-medium leading-tight">Enforces two-factor authentication for all student accounts via email or SMS.</p>
                             </div>
+                            <div class="relative inline-block w-12 h-6">
+                                <input type="hidden" name="require_2fa" value="0">
+                                <input type="checkbox" name="require_2fa" value="1"
+                                       @checked(($settings['require_2fa'] ?? '0') == '1')
+                                       class="peer appearance-none w-12 h-6 rounded-full bg-slate-200 checked:bg-rose-500 cursor-pointer transition-colors duration-200">
+                                <span class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-6 pointer-events-none"></span>
+                            </div>
+                        </div>
 
-                            {{-- Setting: Session Timeout --}}
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <label for="session_timeout" class="font-medium text-gray-900">Session Timeout (Minutes)</label>
-                                    <p class="text-sm text-gray-500">Auto logout after inactivity</p>
-                                </div>
-                                <div class="w-32">
-                                    <select name="session_timeout" id="session_timeout" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        <option value="15" {{ $settings['session_timeout']->value == '15' ? 'selected' : '' }}>15 Mins</option>
-                                        <option value="30" {{ $settings['session_timeout']->value == '30' ? 'selected' : '' }}>30 Mins</option>
-                                        <option value="60" {{ $settings['session_timeout']->value == '60' ? 'selected' : '' }}>1 Hour</option>
-                                        <option value="120" {{ $settings['session_timeout']->value == '120' ? 'selected' : '' }}>2 Hours</option>
-                                    </select>
-                                </div>
+                        {{-- Require Admin 2FA --}}
+                        <div class="flex justify-between items-center p-4 rounded-3xl bg-rose-50/30 border border-rose-100 hover:bg-white transition-colors">
+                            <div class="max-w-[70%]">
+                                <p class="font-black text-slate-800 uppercase text-[11px] tracking-tight mb-1">Require Admin 2FA</p>
+                                <p class="text-[10px] text-slate-400 font-medium leading-tight">Enforces two-factor authentication for admin accounts via email OTP.</p>
                             </div>
+                            <div class="relative inline-block w-12 h-6">
+                                <input type="hidden" name="require_admin_2fa" value="0">
+                                <input type="checkbox" name="require_admin_2fa" value="1"
+                                       @checked(($settings['require_admin_2fa'] ?? '0') == '1')
+                                       class="peer appearance-none w-12 h-6 rounded-full bg-slate-200 checked:bg-rose-500 cursor-pointer transition-colors duration-200">
+                                <span class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-6 pointer-events-none"></span>
+                            </div>
+                        </div>
+
+                        {{-- Voter Session Timeout --}}
+                        <div class="space-y-3">
+                            <label class="font-black text-slate-800 uppercase text-[11px] tracking-tight ml-1">Voter Session Timeout</label>
+                            <div class="relative">
+                                <select name="session_timeout"
+                                        class="block w-full pl-4 pr-10 py-4 text-sm border-slate-200 focus:ring-indigo-500 focus:border-indigo-500 rounded-2xl font-bold text-slate-600 bg-slate-50/50 border">
+                                    <option value="15"  @selected(($settings['session_timeout'] ?? '') == '15')>15 Minutes</option>
+                                    <option value="30"  @selected(($settings['session_timeout'] ?? '') == '30')>30 Minutes</option>
+                                    <option value="60"  @selected(($settings['session_timeout'] ?? '') == '60')>1 Hour</option>
+                                    <option value="120" @selected(($settings['session_timeout'] ?? '') == '120')>2 Hours</option>
+                                </select>
+                            </div>
+                            <p class="text-[9px] text-slate-400 font-medium ml-1 italic">Automatic logout after inactivity period for voters.</p>
                         </div>
                     </div>
 
                 </div>
             </form>
+
+            {{-- DATABASE BACKUP SECTION --}}
+            <div class="bg-white shadow-sm border border-slate-100 rounded-[2.5rem] p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-1.5 h-5 bg-emerald-500 rounded-full"></div>
+                    <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Database Backup</h3>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl bg-emerald-50/50 border border-emerald-100">
+                    <div>
+                        <p class="font-black text-slate-800 uppercase text-[11px] tracking-tight mb-1">Download Full Backup</p>
+                        <p class="text-[10px] text-slate-400 font-medium leading-tight">
+                            Generates a complete SQL backup of the database including all voters, elections, votes, and logs.
+                            The file can be used to restore the system on any MySQL server.
+                        </p>
+                    </div>
+                    <a href="{{ route('admin.backup.download') }}"
+                       class="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition shadow-lg shadow-emerald-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        </svg>
+                        Download .SQL Backup
+                    </a>
+                </div>
+            </div>
+
         </div>
     </div>
 </x-app-layout>

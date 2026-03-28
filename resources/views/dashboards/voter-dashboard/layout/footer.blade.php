@@ -11,18 +11,11 @@
             <p class="text-xs text-gray-500">
                 Malasiqui, Pangasinan
             </p>
-
+            
             <!-- System Info -->
-            <p class="text-sm text-gray-500">
-                © {{ now()->year }} Enhance Voting System. All rights reserved.
-            </p>
-
-            <!-- DepEd Compliance Note -->
-            <p class="text-xs text-gray-400 max-w-xl">
-                This system is developed in compliance with DepEd policies on
-                student data privacy and digital governance.
-            </p>
-
+                        <p class="text-sm text-gray-500">
+                            © {{ now()->year }} Enhance Voting System. All rights reserved.
+                        </p>
         </div>
     </div>
 </footer>

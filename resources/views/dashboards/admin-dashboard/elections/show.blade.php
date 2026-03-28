@@ -1,258 +1,211 @@
 <x-app-layout>
-    {{-- Main Container --}}
-    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-        
-        {{-- Header / Navigation --}}
-        <div class="mb-6">
-            <a href="{{ route('dashboard.elections.index') }}" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                Back to Elections
-            </a>
+    @php $isFinished = now()->gt($election->end_at); @endphp
+    <div class="py-6 bg-slate-50 min-h-screen"
+         x-data="{ timer: '', openVoters: null }"
+         x-init="@if(!$isFinished) setInterval(() => { window.location.reload() }, 10000) @endif">
 
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div class="flex-1">
-                    <h1 class="text-3xl font-bold text-gray-900">{{ $election->title }}</h1>
-                    <p class="mt-2 text-gray-600 text-lg">
-                        {{ $election->bio ?? 'No description provided for this election.' }}
-                    </p>
-                </div>
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
 
-                {{-- Status Badge --}}
-                @php
-                    $statusStyles = match($election->status) {
-                        'active'    => 'bg-green-100 text-green-800 border-green-200',
-                        'upcoming'  => 'bg-blue-100 text-blue-800 border-blue-200',
-                        'completed' => 'bg-gray-100 text-gray-800 border-gray-200',
-                        'archived'  => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                        default     => 'bg-gray-100 text-gray-800'
-                    };
-                @endphp
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border {{ $statusStyles }}">
-                    {{ ucfirst($election->status) }}
-                </span>
-            </div>
-        </div>
-
-        {{-- Statistics Cards --}}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            
-            {{-- Duration Card --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0h18M5.25 12h13.5" /></svg>
-                    <h3 class="text-sm font-medium text-gray-900">Duration</h3>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Start</p>
-                    <p class="font-semibold text-gray-900">{{ $election->start_at?->format('M d, Y g:i A') ?? 'N/A' }}</p>
-                    <p class="text-xs text-gray-500 mt-2">End</p>
-                    <p class="font-semibold text-gray-900">{{ $election->end_at?->format('M d, Y g:i A') ?? 'N/A' }}</p>
+            {{-- TOP NAVIGATION --}}
+            <div class="flex items-center justify-between no-print mb-2">
+                <a href="{{ route('admin.elections.index') }}" class="flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors group">
+                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100 group-hover:bg-indigo-50">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </div>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Back to Management</span>
+                </a>
+                <div x-data="countdown('{{ $election->end_at }}')" class="flex items-center gap-3 px-4 py-2 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></div>
+                    <span class="text-[10px] font-black text-slate-600 uppercase tracking-widest" x-text="timer">LOADING...</span>
                 </div>
             </div>
 
-            {{-- Turnout Card --}}
-            @php
-                // 1. Get Votes Cast
-                $totalVotes = $election->votes_count ?? 0;
-
-                // 2. Decode eligibility
-                $metadata = $election->eligibility_metadata;
-                if (is_string($metadata)) {
-                    $metadata = json_decode($metadata, true) ?? [];
-                }
-
-                // 3. Calculate Eligible Voters
-                $totalEligible = 0;
-
-                if ($election->eligibility_type === 'all') {
-                    // FIX: Added \App\Models\ here
-                    $totalEligible = \App\Models\Voter::where('is_active', true)->count(); 
-                } 
-                elseif ($election->eligibility_type === 'grade_level') {
-                    // Handle the specific data structure (['grades' => [1,4...]])
-                    $gradeIds = $metadata['grades'] ?? $metadata;
-
-                    // FIX: Added \App\Models\ here
-                    $totalEligible = \App\Models\Voter::where('is_active', true)
-                                          ->whereIn('grade_level_id', $gradeIds)
-                                          ->count();
-                }
-
-                // 4. Calculate Percentage
-                $turnoutPercentage = $totalEligible > 0 ? number_format(($totalVotes / $totalEligible) * 100, 1) : 0;
-            @endphp
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
-                    <h3 class="text-sm font-medium text-gray-900">Turnout</h3>
-                </div>
-                <p class="text-2xl font-bold text-gray-900">{{ $turnoutPercentage }}%</p>
-                <p class="text-sm text-gray-500 mt-1">{{ $totalVotes }} / {{ $totalEligible }} votes</p>
-            </div>
-
-            {{-- Positions Count Card --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0V5.625a2.25 2.25 0 10-4.5 0v5.772m0 0A2.25 2.25 0 0112 12a2.25 2.25 0 01-2.25-2.25" /></svg>
-                    <h3 class="text-sm font-medium text-gray-900">Positions</h3>
-                </div>
-                <p class="text-2xl font-bold text-gray-900">{{ $election->positions->count() }}</p>
-                <p class="text-sm text-gray-500 mt-1">
-                    {{-- Calculate total candidates dynamically --}}
-                    {{ $election->positions->sum(fn($p) => $p->candidates->count()) }} total candidates
-                </p>
-            </div>
-
-            {{-- Eligible Voters Card --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
-                    <h3 class="text-sm font-medium text-gray-900">Eligible Voters</h3>
-                </div>
-                <p class="text-2xl font-bold text-gray-900">{{ $totalEligible > 0 ? $totalEligible : '-' }}</p>
-                <p class="text-sm text-gray-500 mt-1">
-                    @if($election->eligibility_type === 'all')
-                        All students
-                    @elseif($election->eligibility_type === 'grade_level')
-                        {{-- Handle JSON metadata access cleanly --}}
-                        @php
-                            $grades = $election->eligibility_metadata['grades'] ?? [];
-                            $grades = is_array($grades) ? implode(', ', $grades) : $grades;
-                        @endphp
-                        Grades: {{ $grades ?: 'None' }}
-                    @elseif($election->eligibility_type === 'section')
-                         @php
-                            $sections = $election->eligibility_metadata['sections'] ?? [];
-                            $sections = is_array($sections) ? implode(', ', $sections) : $sections;
-                        @endphp
-                        Sections: {{ $sections ?: 'None' }}
-                    @else
-                        Specific List
-                    @endif
-                </p>
-            </div>
-        </div>
-
-        <hr class="border-gray-200 mb-8" />
-
-        {{-- Positions & Candidates Tabs --}}
-        {{-- Initialize x-data with the first position ID, handling case where no positions exist --}}
-        <div x-data="{ currentTab: '{{ $election->positions->first()?->id ?? 0 }}' }">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">Positions & Candidates</h3>
-
-            @if($election->positions->count() > 0)
-                {{-- Tabs Header --}}
-                <div class="border-b border-gray-200 mb-6">
-                    <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
-                        @foreach($election->positions as $position)
-                            <button 
-                                @click="currentTab = '{{ $position->id }}'"
-                                :class="currentTab == '{{ $position->id }}' 
-                                    ? 'border-indigo-500 text-indigo-600' 
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-150">
-                                {{ $position->title }}
-                            </button>
-                        @endforeach
-                    </nav>
-                </div>
-
-                {{-- Tabs Content --}}
-                @foreach($election->positions as $position)
-                    <div x-show="currentTab == '{{ $position->id }}'" x-cloak class="space-y-6">
-                        
-                        {{-- Position Header Card --}}
-                        <div class="bg-white shadow rounded-lg border border-gray-200 p-6">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h2 class="text-lg font-medium text-gray-900">{{ $position->title }}</h2>
-                                    <p class="mt-1 text-sm text-gray-500">{{ $position->description ?? 'No description provided' }}</p>
-                                </div>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                                    Max {{ $position->max_selection }} {{ Str::plural('winner', $position->max_selection) }}
-                                </span>
-                            </div>
+            {{-- HEADER STATS --}}
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden p-8">
+                <div class="text-center">
+                    @php $isFinished = now()->gt($election->end_at); @endphp
+                    <span class="px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-widest {{ $isFinished ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600 animate-pulse border border-indigo-100' }}">
+                        {{ $isFinished ? '● Final Tally Record' : '● Live processing' }}
+                    </span>
+                    <h1 class="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none mt-4">{{ $election->title }}</h1>
+                    <div class="flex flex-col items-center justify-center py-6 border-y border-slate-50/50 mt-6 font-mono">
+                        <div class="flex items-baseline gap-3">
+                            <span class="text-6xl font-black text-indigo-600 tracking-tighter leading-none">{{ number_format($election->voted_count ?? 0) }}</span>
+                            <span class="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em]">Participants</span>
                         </div>
+                        <p class="text-[8px] font-black text-slate-900 uppercase tracking-[0.2em] mt-2 italic">
+                            Verified out of {{ number_format($election->total_voters ?? 0) }} Total Voters
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-                        {{-- Candidates Grid --}}
-                        <div>
-                            <h4 class="font-medium text-sm text-gray-500 mb-4">
-                                Candidates ({{ $position->candidates->count() }})
-                            </h4>
+            {{-- LIVE TALLY GRID --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                @foreach($election->positions as $position)
+                    @php
+                        $candidates    = $position->candidates->sortByDesc('votes_count');
+                        $totalPosVotes = $candidates->sum('votes_count');
+                    @endphp
 
-                            @if($position->candidates->count() > 0)
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    @foreach($position->candidates as $candidate)
-                                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow">
-                                            <div class="flex items-start justify-between gap-4">
-                                                <div class="flex-1">
-                                                    <h5 class="text-base font-semibold text-gray-900">{{ $candidate->name }}</h5>
-                                                    
-                                                    <div class="flex flex-wrap gap-2 mt-2">
-                                                        @if($candidate->gradeLevel)
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                                                                {{ $candidate->gradeLevel->name }}
-                                                            </span>
-                                                        @endif
-                                                        @if($candidate->section)
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                                                                {{ $candidate->section->name }}
-                                                            </span>
-                                                        @endif
-                                                        @if($candidate->party)
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                                                {{ $candidate->party }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
+                    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col p-6">
+                        <h3 class="font-black text-slate-800 uppercase text-[10px] tracking-widest mb-8 flex items-center gap-3">
+                            <div class="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
+                            {{ $position->title }}
+                        </h3>
 
-                                                {{-- Vote Count (Only if completed) --}}
-                                                @if($election->status === 'completed')
-                                                    <div class="text-center">
-                                                        <p class="text-2xl font-bold text-indigo-600">{{ $candidate->votes_count ?? 0 }}</p>
-                                                        <p class="text-xs text-gray-500">votes</p>
-                                                    </div>
-                                                @endif
+                        <div class="space-y-8">
+                            @forelse($candidates as $candidate)
+                                @php
+                                    $percent = $totalPosVotes > 0 ? ($candidate->votes_count / $totalPosVotes) * 100 : 0;
+
+                                    // Voters who voted for this candidate
+                                    $votersForCandidate = \App\Models\Vote::where('candidate_id', $candidate->id)
+                                        ->where('election_id', $election->id)
+                                        ->with('voter')
+                                        ->get()
+                                        ->map(fn($v) => [
+                                            'name'    => $v->voter ? $v->voter->first_name . ' ' . $v->voter->last_name : 'Unknown',
+                                            'grade'   => $v->voter?->gradeLevel?->name ?? '—',
+                                            'section' => $v->voter?->section?->name ?? '—',
+                                        ]);
+                                @endphp
+                                <div class="relative">
+                                    <div class="flex justify-between items-end mb-2">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-black text-slate-800 uppercase italic leading-none">{{ $candidate->full_name }}</span>
+                                            <span class="text-[8px] font-bold text-slate-400 uppercase mt-1">{{ $candidate->party ?? 'Independent' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-right">
+                                                <span class="text-xl font-black text-indigo-600 leading-none block">{{ number_format($candidate->votes_count ?? 0) }}</span>
+                                                <span class="text-[8px] font-black text-slate-300 uppercase tracking-tighter">Votes</span>
                                             </div>
-
-                                            @if($candidate->platform)
-                                                <div class="mt-4 pt-4 border-t border-gray-100">
-                                                    <p class="text-sm text-gray-600 italic">
-                                                        "{{ $candidate->platform }}"
-                                                    </p>
-                                                </div>
+                                            {{-- View Voters Button --}}
+                                            @if($candidate->votes_count > 0)
+                                            <button
+                                                @click="openVoters = openVoters === '{{ $candidate->id }}' ? null : '{{ $candidate->id }}'"
+                                                class="text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition">
+                                                Voters
+                                            </button>
                                             @endif
                                         </div>
-                                    @endforeach
+                                    </div>
+                                    <div class="w-full bg-slate-50 h-4 rounded-full overflow-hidden border border-slate-100 shadow-inner">
+                                        <div class="bg-indigo-500 h-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(79,70,229,0.4)]"
+                                             style="width: {{ $percent }}%"></div>
+                                    </div>
+                                    <div class="mt-1.5 flex justify-end">
+                                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">
+                                            {{ number_format($percent, 1) }}% share
+                                        </span>
+                                    </div>
+
+                                    {{-- Voters List Dropdown --}}
+                                    <div x-show="openVoters === '{{ $candidate->id }}'"
+                                         x-transition
+                                         class="mt-3 bg-indigo-50 rounded-2xl border border-indigo-100 overflow-hidden">
+                                        <div class="px-4 py-2 border-b border-indigo-100 bg-indigo-100">
+                                            <p class="text-[9px] font-black uppercase tracking-widest text-indigo-600">
+                                                Voters who chose {{ $candidate->first_name }}
+                                            </p>
+                                        </div>
+                                        <div class="divide-y divide-indigo-100 max-h-48 overflow-y-auto">
+                                            @forelse($votersForCandidate as $voter)
+                                            <div class="flex items-center justify-between px-4 py-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-6 h-6 rounded-full bg-indigo-200 flex items-center justify-center">
+                                                        <span class="text-[9px] font-black text-indigo-700">{{ strtoupper(substr($voter['name'], 0, 1)) }}</span>
+                                                    </div>
+                                                    <span class="text-[10px] font-black text-slate-700 uppercase">{{ $voter['name'] }}</span>
+                                                </div>
+                                                <span class="text-[9px] text-slate-400 font-bold">{{ $voter['grade'] }} — {{ $voter['section'] }}</span>
+                                            </div>
+                                            @empty
+                                            <p class="text-center py-3 text-[9px] text-slate-400">No voters yet</p>
+                                            @endforelse
+                                        </div>
+                                    </div>
                                 </div>
-                            @else
-                                <div class="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                    </svg>
-                                    <h3 class="mt-2 text-sm font-medium text-gray-900">No candidates added</h3>
-                                    <p class="mt-1 text-sm text-gray-500">There are no candidates listed for this position yet.</p>
-                                </div>
-                            @endif
+                            @empty
+                                <p class="text-center text-[10px] text-slate-300 italic uppercase">No candidates registered</p>
+                            @endforelse
                         </div>
                     </div>
                 @endforeach
-            @else
-                <div class="text-center py-10">
-                    <p class="text-gray-500">No positions have been created for this election yet.</p>
-                </div>
-            @endif
-        </div>
-
-        {{-- Footer Actions --}}
-        @if($election->status === 'completed')
-            <div class="mt-10 flex justify-end">
-                <a href="#" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <svg class="mr-2 -ml-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                    Export Results
-                </a>
             </div>
-        @endif
+
+            {{-- HISTORY LOG --}}
+            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6">
+                <div class="flex items-center justify-between mb-6 border-b pb-4">
+                    <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        History Log
+                    </h3>
+                    <span class="text-[9px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 uppercase">
+                        {{ $votedVotersList->count() }} Records
+                    </span>
+                </div>
+                <div x-data="{ search: '' }">
+                    <input type="text" x-model="search" placeholder="Search voter name..."
+                           class="w-full mb-4 px-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 font-medium">
+                    <div class="overflow-auto max-h-[400px]">
+                        <table class="w-full text-left">
+                            <thead class="sticky top-0 bg-white">
+                                <tr class="border-b border-slate-100">
+                                    <th class="text-[9px] font-black text-slate-400 uppercase tracking-widest pb-3 pr-4">#</th>
+                                    <th class="text-[9px] font-black text-slate-400 uppercase tracking-widest pb-3 pr-4">Voter</th>
+                                    <th class="text-[9px] font-black text-slate-400 uppercase tracking-widest pb-3 pr-4">Grade & Section</th>
+                                    <th class="text-[9px] font-black text-slate-400 uppercase tracking-widest pb-3">Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($votedVotersList as $index => $voter)
+                                <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-all"
+                                    x-show="'{{ strtolower($voter['voter_name']) }}'.includes(search.toLowerCase())">
+                                    <td class="py-3 pr-4"><span class="text-[9px] font-black text-slate-400">{{ $index + 1 }}</span></td>
+                                    <td class="py-3 pr-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                                                <span class="text-[9px] font-black text-indigo-600">{{ strtoupper(substr($voter['voter_name'], 0, 1)) }}</span>
+                                            </div>
+                                            <span class="text-[10px] font-black text-slate-800 uppercase">{{ $voter['voter_name'] }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 pr-4"><span class="text-[9px] font-bold text-slate-500">{{ $voter['grade'] }} — {{ $voter['section'] }}</span></td>
+                                    <td class="py-3"><span class="text-[9px] font-bold text-slate-400">{{ $voter['voted_at'] }}</span></td>
+                                </tr>
+                                @empty
+                                <tr><td colspan="4" class="py-12 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">No votes recorded yet</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
+
+    <script>
+        function countdown(expiry) {
+            return {
+                timer: '',
+                expiryDate: new Date(expiry).getTime(),
+                init() {
+                    let loop = setInterval(() => {
+                        let now = new Date().getTime();
+                        let diff = this.expiryDate - now;
+                        if (diff < 0) { this.timer = "ELECTION CLOSED"; clearInterval(loop); return; }
+                        let h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        let s = Math.floor((diff % (1000 * 60)) / 1000);
+                        this.timer = `${h}H ${m}M ${s}S REMAINING`;
+                    }, 1000);
+                }
+            }
+        }
+    </script>
 </x-app-layout>

@@ -6,9 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    public static function get(string $key, $default = null)
+    protected $table = 'settings';
+
+    protected $fillable = [
+        'setting_key',
+        'value',
+        'label',
+        'type',
+    ];
+
+    /**
+     * Create or update a setting by key
+     */
+    public static function set(string $key, $value): void
     {
-        $setting = self::where('key', $key)->first();
-        return $setting ? $setting->value : $default;
+        static::updateOrCreate(
+            ['setting_key' => $key],
+            ['value' => $value]
+        );
     }
 }

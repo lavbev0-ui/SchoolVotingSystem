@@ -1,85 +1,54 @@
 <x-app-layout>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-
-            {{-- HEADER --}}
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900">Election Results</h2>
-                <p class="text-sm text-gray-500">View detailed results and analytics</p>
-            </div>
-
-            {{-- SECTION 1: COMPLETED ELECTIONS --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
-                <div class="p-6 border-b border-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-900">Completed Elections</h3>
-                    <p class="text-sm text-gray-500">View results from completed elections</p>
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-10">
+        {{-- ELECTION HISTORY LIST SECTION --}}
+        <div class="bg-white overflow-hidden shadow-xl rounded-[2.5rem] border border-slate-100">
+            <div class="p-8 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Election History</h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Review past tally and official results</p>
                 </div>
-
-                <div class="p-6 space-y-6">
-                    @php
-                        // Filter for completed elections directly in the view if not done in controller
-                        $completedElections = $elections->where('status', 'completed');
-                    @endphp
-
-                    @forelse ($completedElections as $election)
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100 last:border-0 last:pb-0">
-                            
-                            {{-- Election Info --}}
-                            <div class="flex-1">
-                                <p class="font-medium text-gray-900">{{ $election->title }}</p>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    Total Votes: {{ $election->votes_count }} 
-                                    (
-                                    @if(isset($totalVoters) && $totalVoters > 0)
-                                        {{ round(($election->votes_count / $totalVoters) * 100, 1) }}%
-                                    @else
-                                        0%
-                                    @endif
-                                    turnout)
-                                </p>
-                                <p class="text-xs text-gray-400 mt-1">
-                                    Completed: {{ \Carbon\Carbon::parse($election->end_at)->format('M d, Y') }}
-                                </p>
-                            </div>
-
-                            {{-- Actions --}}
-                            <div class="flex gap-3">
-                                <a href="{{ route('dashboard.results.show', $election->id) }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-medium text-xs text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-                                    View Results
-                                </a>
-                                
-                                {{-- Optional Export Button --}}
-                                <button type="button" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-medium text-xs text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
-                                    Export
-                                </button>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center py-4">
-                            <p class="text-gray-500 text-sm">No completed elections found.</p>
-                        </div>
-                    @endforelse
+                <div class="h-12 w-12 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                 </div>
             </div>
 
-            {{-- SECTION 2: ANALYTICS (Placeholder) --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
-                <div class="p-6 border-b border-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-900">Active Election Analytics</h3>
-                    <p class="text-sm text-gray-500">Real-time voting statistics</p>
-                </div>
+            <div class="p-8 space-y-4">
+                @forelse ($completedElections as $hist)
+                    <div class="flex items-center justify-between p-6 border border-slate-100 rounded-[2rem] hover:bg-slate-50 transition-all group">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-black text-slate-800 uppercase tracking-tight">{{ $hist->title }}</h4>
+                            <div class="flex items-center gap-4 mt-2">
+                                <span class="text-[9px] font-black uppercase px-3 py-1 rounded-full {{ $hist->status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
+                                    {{ $hist->status }}
+                                </span>
+                                <div class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"></path></svg>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase">Ended: {{ $hist->end_at->format('M d, Y') }}</p>
+                                </div>
+                                <div class="flex items-center gap-1.5 ml-2">
+                                    <div class="h-1.5 w-1.5 rounded-full bg-sky-400"></div>
+                                    <p class="text-[10px] font-black text-sky-500 uppercase">Turnout: {{ number_format($hist->unique_votes_count) }}</p>
+                                </div>
+                            </div>
+                        </div>
 
-                <div class="p-6">
-                    <div class="text-center py-12 text-gray-400">
-                        {{-- BarChart Icon --}}
-                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                        </svg>
-                        <p class="text-sm">Detailed analytics and charts coming soon</p>
+                        {{-- [UPDATE] PINALITAN ANG ROUTE NAME PARA SA BAGONG TALLY VIEW --}}
+                        <a href="{{ route('admin.results.show', ['election' => $hist->id]) }}" 
+                           class="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-sky-600 shadow-xl transition-all active:scale-95 group">
+                            Review Tally
+                            <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        </a>
                     </div>
-                </div>
+                @empty
+                    <div class="text-center py-20 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100">
+                        <p class="text-slate-400 uppercase font-black text-xs tracking-widest">No completed elections found in history.</p>
+                    </div>
+                @endforelse
             </div>
 
+            <div class="px-8 pb-8">
+                {{ $completedElections->links() }}
+            </div>
         </div>
     </div>
 </x-app-layout>

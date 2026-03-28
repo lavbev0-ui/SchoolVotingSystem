@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Vote extends Model
 {
@@ -16,22 +17,34 @@ class Vote extends Model
         'voter_id',
     ];
 
-    public function election()
+    /**
+     * Ugnayan sa Election model.
+     */
+    public function election(): BelongsTo
     {
         return $this->belongsTo(Election::class);
     }
 
-    public function position()
+    /**
+     * Ugnayan sa Position model.
+     */
+    public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class);
     }
 
-    public function candidate()
+    /**
+     * Ugnayan sa Candidate model.
+     */
+    public function candidate(): BelongsTo
     {
         return $this->belongsTo(Candidate::class);
     }
 
-    public function voter()
+    /**
+     * Ugnayan sa Voter model.
+     */
+    public function voter(): BelongsTo
     {
         return $this->belongsTo(Voter::class);
     }

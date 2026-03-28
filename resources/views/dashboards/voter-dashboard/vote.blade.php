@@ -1,351 +1,458 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vote: {{ $election->title }}</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Cast Ballot | Enhance Voting System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
         [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', sans-serif; }
+
+        .candidate-card { transition: all 0.2s ease; }
+        .candidate-card.selected { border-color: #0ea5e9 !important; background: #f0f9ff !important; box-shadow: 0 4px 16px rgba(14,165,233,0.2) !important; }
+        .candidate-card:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+
+        /* ================================================================
+           DARK MODE — Cast Ballot Page
+           ================================================================ */
+        html.dark-mode body {
+            background-color: #0f1117 !important;
+            color: #e2e8f0 !important;
+        }
+
+        /* Base background */
+        html.dark-mode [style*="background: #f8fafc"],
+        html.dark-mode [style*="background:#f8fafc"] {
+            background: #0f1117 !important;
+        }
+
+        /* Navbar */
+        html.dark-mode nav { background-color: #12151f !important; }
+        html.dark-mode .sticky { background-color: #12151f !important; }
+
+        /* Progress card — yung light blue box */
+        html.dark-mode [style*="background:#e0f2fe"],
+        html.dark-mode [style*="background: #e0f2fe"] {
+            background: #082f49 !important;
+            border-color: #0369a1 !important;
+        }
+
+        /* Progress dots inner track */
+        html.dark-mode .bg-slate-100 { background-color: #252a3a !important; }
+
+        /* Position header card */
+        html.dark-mode [style*="border:2px solid #bae6fd"],
+        html.dark-mode [style*="border: 2px solid #bae6fd"] {
+            background-color: #1e2130 !important;
+            border-color: #0369a1 !important;
+        }
+
+        /* Candidate cards */
+        html.dark-mode .candidate-card {
+            background-color: #1e2130 !important;
+            border-color: #1e4f6b !important;
+        }
+        html.dark-mode .candidate-card.selected {
+            background: #082f49 !important;
+            border-color: #0ea5e9 !important;
+        }
+
+        /* Candidate photo border */
+        html.dark-mode [style*="border:2px solid #e2e8f0"] {
+            border-color: #374151 !important;
+            background: #252a3a !important;
+        }
+
+        /* Party badge */
+        html.dark-mode .bg-sky-100  { background-color: #082f49 !important; }
+        html.dark-mode .bg-slate-100 { background-color: #252a3a !important; }
+        html.dark-mode .text-slate-500 { color: #94a3b8 !important; }
+
+        /* Candidate name & text */
+        html.dark-mode .text-slate-900 { color: #f1f5f9 !important; }
+        html.dark-mode .text-slate-800 { color: #e2e8f0 !important; }
+        html.dark-mode .text-slate-400 { color: #64748b !important; }
+
+        /* Radio button outer ring */
+        html.dark-mode .border-slate-300 { border-color: #4b5563 !important; }
+
+        /* Back navigation button */
+        html.dark-mode [style*="border-color:#bae6fd"] {
+            border-color: #0369a1 !important;
+            color: #7dd3fc !important;
+            background-color: #1e2130 !important;
+        }
+
+        /* Vote summary box */
+        html.dark-mode [style*="background:#bae6fd"],
+        html.dark-mode [style*="background: #bae6fd"] {
+            background: #0c4a6e !important;
+            border-color: #0369a1 !important;
+        }
+        html.dark-mode .border-slate-50 { border-color: #2d3347 !important; }
+
+        /* Modals */
+        html.dark-mode .bg-white.rounded-t-3xl,
+        html.dark-mode .bg-white.rounded-3xl {
+            background-color: #1e2130 !important;
+        }
+        html.dark-mode .bg-slate-50 { background-color: #252a3a !important; }
+        html.dark-mode .bg-indigo-50 { background-color: #1e1a3a !important; }
+        html.dark-mode .text-slate-600 { color: #cbd5e1 !important; }
+        html.dark-mode .text-indigo-800 { color: #c7d2fe !important; }
+        html.dark-mode .text-slate-400 { color: #64748b !important; }
+
+        /* Review modal ballot items */
+        html.dark-mode .border-sky-200.bg-sky-50 {
+            background-color: #082f49 !important;
+            border-color: #0369a1 !important;
+        }
+        html.dark-mode .border-slate-100.bg-slate-50 {
+            background-color: #1a1f2e !important;
+            border-color: #2d3347 !important;
+        }
+        html.dark-mode .border-slate-200 { border-color: #374151 !important; }
+        html.dark-mode .text-slate-600 { color: #cbd5e1 !important; }
+
+        /* Images — no filter change */
+        html.dark-mode img { filter: none !important; }
     </style>
+
+    {{-- Apply dark mode instantly (no flash) --}}
+    <script>
+        if (localStorage.getItem('voterDarkMode') === 'true') {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased" 
-      x-data="votingSystem({{ json_encode($election->positions) }})">
 
-    <nav class="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+<body class="min-h-screen" style="background: #f8fafc;">
+
+    <div class="sticky top-0 z-40">
+        @include('dashboards.voter-dashboard.layout.nav')
+    </div>
+
+    <main x-data="votingFlow()">
+
+        {{-- PROFILE MODAL --}}
+        <div x-show="showModal" x-cloak x-transition
+             class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+             @click.self="showModal = false">
+            <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-md overflow-hidden">
+                <div class="relative h-24 bg-gradient-to-r from-sky-400 to-blue-400">
+                    <button @click="showModal = false" class="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <div class="absolute -bottom-8 left-6">
+                        <div class="w-16 h-16 rounded-2xl border-4 border-white overflow-hidden shadow-lg bg-indigo-100">
+                            <img x-show="modalCandidate.photo" :src="modalCandidate.photo" class="w-full h-full object-cover object-top">
+                            <div x-show="!modalCandidate.photo" class="w-full h-full flex items-center justify-center text-indigo-500 font-black text-2xl uppercase" x-text="modalCandidate.initials"></div>
+                        </div>
                     </div>
+                </div>
+                <div class="pt-12 px-6 pb-2">
+                    <span class="inline-block px-3 py-1 bg-sky-100 text-sky-600 text-[10px] font-black uppercase tracking-widest rounded-full" x-text="modalCandidate.party"></span>
+                    <p class="text-lg font-black text-slate-900 uppercase mt-1" x-text="modalCandidate.name"></p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest" x-text="modalCandidate.position"></p>
+                </div>
+                <div class="px-6 pb-6 space-y-4 max-h-[50vh] overflow-y-auto">
+                    <div class="bg-slate-50 rounded-2xl p-4">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Profile & Achievements</p>
+                        <p class="text-sm text-slate-600 leading-relaxed" x-text="modalCandidate.bio || 'No profile provided.'"></p>
+                    </div>
+                    <div class="bg-indigo-50 rounded-2xl p-4">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2">Campaign Platform</p>
+                        <p class="text-sm text-indigo-800 leading-relaxed" x-text="modalCandidate.manifesto || 'No platform provided.'"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- REVIEW MODAL --}}
+        <div x-show="showReview" x-cloak x-transition
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div class="bg-gradient-to-r from-sky-500 to-blue-500 px-6 py-5">
+                    <p class="text-sky-100 text-[10px] font-black uppercase tracking-widest">Review Your Ballot</p>
+                    <h3 class="text-white font-black text-lg uppercase mt-1">Confirm Before Submitting</h3>
+                </div>
+                <div class="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+                    <template x-for="pos in positions" :key="pos.id">
+                        <div class="flex items-center justify-between p-3 rounded-2xl border-2"
+                             :class="votes[pos.id] ? 'border-sky-200 bg-sky-50' : 'border-slate-100 bg-slate-50'">
+                            <div>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400" x-text="pos.title"></p>
+                                <p class="text-sm font-black text-slate-800 uppercase mt-0.5"
+                                   x-text="votes[pos.id] ? getCandidateName(pos.id, votes[pos.id]) : 'SKIPPED'"></p>
+                            </div>
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center"
+                                 :class="votes[pos.id] ? 'bg-sky-400' : 'bg-slate-300'">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                          :d="votes[pos.id] ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </template>
+                    <p class="text-[10px] text-slate-400 text-center italic mt-2">Skipped positions will not have a vote recorded.</p>
+                </div>
+                <div class="px-6 pb-6 flex gap-3">
+                    <button @click="showReview = false"
+                            class="flex-1 py-3 border-2 border-slate-200 text-slate-600 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-50 transition">
+                        ← Edit Votes
+                    </button>
+                    <button @click="confirmSubmit()"
+                            :disabled="isSubmitting"
+                            class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-lg transition disabled:opacity-50"
+                            x-text="isSubmitting ? 'Submitting...' : '✓ Submit Ballot'">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-lg mx-auto py-6 px-4">
+
+            {{-- HEADER --}}
+            <div class="mb-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">{{ $election->title }}</p>
+                <h1 class="text-2xl font-black text-slate-900">Cast Your Ballot</h1>
+            </div>
+
+            {{-- PROGRESS --}}
+            <div class="rounded-2xl p-5 mb-6" style="background:#e0f2fe; border:1px solid #bae6fd;">
+                <div class="flex justify-between items-center mb-3">
                     <div>
-                        <h1 class="text-lg font-bold leading-tight tracking-tight text-gray-900">Voting System</h1>
-                        <p class="text-xs font-medium text-gray-500">Logged in as {{ Auth::user()->name ?? 'Student' }}</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Progress</p>
+                        <p class="text-sm font-black text-slate-800">Position <span x-text="currentStep + 1"></span> of <span x-text="totalSteps"></span></p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-sky-400 flex items-center justify-center">
+                        <span class="text-white font-black text-sm" x-text="`${Math.round(((currentStep + 1) / totalSteps) * 100)}%`"></span>
                     </div>
                 </div>
-
-                <a href="{{ route('voter.dashboard') }}" 
-                   class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    Back to Dashboard
-                </a>
-            </div>
-        </div>
-        
-        <div class="h-1 w-full bg-gray-100">
-            <div class="h-1 bg-indigo-600 transition-all duration-500 ease-out" :style="'width: ' + progressPercentage + '%'"></div>
-        </div>
-    </nav>
-
-    <main class="py-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <div class="mb-10 text-center sm:text-left sm:flex sm:items-end sm:justify-between">
-                <div>
-                    <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $election->title }}</h2>
-                    <p class="mt-2 text-lg text-gray-600">Please review candidates carefully before submitting your vote.</p>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-sky-400 to-blue-400 h-full rounded-full transition-all duration-500"
+                         :style="`width: ${((currentStep + 1) / totalSteps) * 100}%`"></div>
                 </div>
-                
-                <div class="mt-4 sm:mt-0 flex items-center gap-4">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-sm font-medium text-gray-500">Progress</p>
-                        <p class="text-xl font-bold text-indigo-600">
-                            <span x-text="voteCount"></span> / <span x-text="totalPositions"></span>
-                        </p>
-                    </div>
-                    <span class="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                        Active Election
-                    </span>
+                <div class="flex justify-between mt-3">
+                    <template x-for="(pos, idx) in positions" :key="idx">
+                        <div class="flex-1 flex flex-col items-center gap-1">
+                            <div class="w-2 h-2 rounded-full transition-all"
+                                 :class="votes[pos.id] ? 'bg-sky-400' : idx === currentStep ? 'bg-indigo-400 ring-2 ring-indigo-200' : 'bg-slate-200'"></div>
+                        </div>
+                    </template>
                 </div>
             </div>
 
-            <form id="votingForm" action="{{ route('voter.vote.store') }}" method="POST">
+            {{-- BALLOT --}}
+            <form method="POST" action="{{ route('voter.vote.store', $election->id) }}" @submit.prevent="openReview()">
                 @csrf
-                <input type="hidden" name="election_id" value="{{ $election->id }}">
 
-                <div class="space-y-16">
-                    @foreach($election->positions as $position)
-                        <section id="position-{{ $position->id }}" class="scroll-mt-32 relative">
-                            
-                            <div class="mb-6 flex items-center gap-4 border-l-4 border-indigo-600 pl-4">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-gray-900">{{ $position->title }}</h3>
-                                    <p class="text-sm text-gray-500">
-                                        Select <span class="font-bold text-gray-800">{{ $position->max_selection }}</span> {{ Str::plural('candidate', $position->max_selection) }}
-                                    </p>
-                                </div>
-                                <div x-show="isPositionFilled({{ $position->id }})" 
-                                     x-transition:enter="transition ease-out duration-300"
-                                     x-transition:enter-start="opacity-0 scale-50"
-                                     x-transition:enter-end="opacity-100 scale-100"
-                                     class="ml-auto rounded-full bg-green-100 p-1 text-green-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
+                <template x-if="currentPosition">
+                    <div>
+                        {{-- Position Header --}}
+                        <div class="rounded-2xl p-5 mb-4 bg-white" style="border:2px solid #bae6fd;">
+                            <div>
+                                <p class="text-sky-500 text-[10px] font-black uppercase tracking-widest mb-1">Vote for</p>
+                                <h2 class="text-slate-900 font-black text-xl uppercase" x-text="currentPosition.title"></h2>
+                                <p class="text-slate-400 text-[10px] mt-1" x-text="`${currentPosition.candidates.length} candidate(s)`"></p>
                             </div>
-
-                            <div class="space-y-6">
-                                @forelse($position->candidates as $candidate)
-                                    <div @click="toggleVote({{ $position->id }}, {{ $candidate->id }}, {{ $position->max_selection }}, '{{ addslashes($candidate->name) }}')"
-                                         role="button"
-                                         tabindex="0"
-                                         :class="isSelected({{ $position->id }}, {{ $candidate->id }}) 
-                                            ? 'ring-2 ring-indigo-600 border-indigo-600 bg-indigo-50' 
-                                            : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-md'"
-                                         class="group relative overflow-hidden rounded-xl border transition-all duration-200 focus:outline-none">
-
-                                        @if($position->max_selection > 1)
-                                            <input type="checkbox" name="votes[{{ $position->id }}][]" value="{{ $candidate->id }}" class="hidden" :checked="isSelected({{ $position->id }}, {{ $candidate->id }})">
-                                        @else
-                                            <input type="radio" name="votes[{{ $position->id }}]" value="{{ $candidate->id }}" class="hidden" :checked="isSelected({{ $position->id }}, {{ $candidate->id }})">
-                                        @endif
-
-                                        <div class="flex flex-col md:flex-row">
-                                            <div class="md:w-64 flex-shrink-0 bg-gray-100 md:border-r border-gray-200">
-                                                <div class="h-64 md:h-full w-full relative">
-                                                    @if($candidate->photo_path)
-                                                        <img src="{{ asset('storage/' . $candidate->photo_path) }}" alt="{{ $candidate->name }}" class="absolute inset-0 h-full w-full object-cover">
-                                                    @else
-                                                        <div class="absolute inset-0 flex items-center justify-center bg-indigo-100 text-6xl font-bold text-indigo-400">
-                                                            {{ substr($candidate->name, 0, 1) }}
-                                                        </div>
-                                                    @endif
-                                                    
-                                                    <div x-show="isSelected({{ $position->id }}, {{ $candidate->id }})" 
-                                                         class="absolute top-4 right-4 bg-indigo-600 text-white rounded-full p-2 md:hidden shadow-lg">
-                                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="flex-1 p-6 md:p-8">
-                                                <div class="flex justify-between items-start">
-                                                    <div>
-                                                        <h4 class="text-3xl font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
-                                                            {{ $candidate->name }}
-                                                        </h4>
-                                                        
-                                                        <div class="mt-2 flex flex-wrap gap-2 text-sm text-gray-600">
-                                                            @if($candidate->party)
-                                                                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 font-medium text-gray-700 ring-1 ring-inset ring-gray-600/10">
-                                                                    {{ $candidate->party }}
-                                                                </span>
-                                                            @endif
-
-                                                            <span class="inline-flex items-center rounded-md px-2 py-1 font-medium text-gray-500">
-                                                                {{ $candidate->gradeLevel?->name ?? 'Student' }} 
-                                                                @if($candidate->section?->name) &bull; {{ $candidate->section->name }} @endif
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div :class="isSelected({{ $position->id }}, {{ $candidate->id }}) ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-gray-300'"
-                                                         class="hidden md:flex h-10 w-10 flex-shrink-0 rounded-full border transition-colors duration-200 items-center justify-center mt-1">
-                                                        <svg x-show="isSelected({{ $position->id }}, {{ $candidate->id }})" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-
-                                                @if($candidate->platform || $candidate->bio)
-                                                    <div class="mt-6">
-                                                        <h5 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Platform & Goals</h5>
-                                                        <div class="bg-gray-50 rounded-lg p-5 border border-gray-100">
-                                                            <p class="text-base leading-relaxed text-gray-700 whitespace-pre-wrap font-medium">
-                                                                {{ $candidate->platform ?? $candidate->bio }}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                @else 
-                                                    <div class="mt-6 text-gray-400 italic text-sm">
-                                                        No platform information provided.
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <div class="py-12 text-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50">
-                                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                        <p class="mt-2 text-sm text-gray-500">No candidates listed for this position.</p>
-                                    </div>
-                                @endforelse
-                            </div>
-                        </section>
-                    @endforeach
-                </div>
-
-                <div class="mt-16 rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-10">
-                    <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
-                        <div class="text-center sm:text-left">
-                            <h3 class="text-lg font-bold text-gray-900">Ready to cast your vote?</h3>
-                            <p class="text-sm text-gray-500">Please review your selections. You cannot change your vote after submitting.</p>
                         </div>
-                        <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                            <button type="button" onclick="window.history.back()" 
-                                    class="inline-flex justify-center items-center rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                                Cancel
+
+                        {{-- Candidates --}}
+                        <div class="space-y-3 mb-6">
+                            <template x-for="candidate in currentPosition.candidates" :key="candidate.id">
+                                <div class="candidate-card rounded-2xl border-2 overflow-hidden bg-white" style="border-color:#bae6fd;"
+                                     :class="{'selected': votes[currentPosition.id] == candidate.id}">
+                                    <div class="flex items-center p-4 gap-4">
+                                        <div style="width:64px;height:64px;min-width:64px;border-radius:14px;overflow:hidden;border:2px solid #e2e8f0;background:#f1f5f9;flex-shrink:0;">
+                                            <template x-if="candidate.photo_path">
+                                                <img :src="'/storage/' + candidate.photo_path" style="width:64px;height:64px;object-fit:cover;object-position:top;display:block;">
+                                            </template>
+                                            <template x-if="!candidate.photo_path">
+                                                <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#6366f1;text-transform:uppercase;">
+                                                    <span x-text="candidate.first_name ? candidate.first_name.charAt(0) : '?'"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide mb-1"
+                                                  :class="candidate.party ? 'bg-sky-100 text-sky-600' : 'bg-slate-100 text-slate-500'"
+                                                  x-text="candidate.party || 'Independent'"></span>
+                                            <p class="font-black text-slate-900 text-sm uppercase leading-tight truncate" x-text="candidate.full_name"></p>
+                                            <button type="button" @click.stop="showCandidateProfile(candidate)"
+                                                    class="text-[10px] font-bold text-sky-400 hover:text-sky-600 mt-1 flex items-center gap-1 transition-colors">
+                                                View Profile
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+                                            </button>
+                                        </div>
+                                        <button type="button" @click="selectCandidate(candidate.id)"
+                                                class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-sky-50">
+                                            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                                                 :class="votes[currentPosition.id] == candidate.id ? 'border-sky-400 bg-sky-400' : 'border-slate-300'">
+                                                <div x-show="votes[currentPosition.id] == candidate.id" class="w-2.5 h-2.5 bg-white rounded-full"></div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <div x-show="votes[currentPosition.id] == candidate.id" class="h-1 bg-gradient-to-r from-sky-400 to-blue-400"></div>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Navigation --}}
+                        <div class="flex gap-3">
+                            <button type="button" @click="prevStep()" :disabled="currentStep === 0"
+                                    class="flex-1 py-4 border-2 rounded-2xl font-black uppercase text-[11px] tracking-widest transition disabled:opacity-30 disabled:cursor-not-allowed bg-white"
+                                    style="border-color:#bae6fd; color:#0369a1;">
+                                ← Back
                             </button>
-                            <button type="button" 
-                                    @click="prepareConfirmation()"
-                                    :disabled="!isFormComplete"
-                                    :class="!isFormComplete ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'"
-                                    class="inline-flex justify-center items-center rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all">
-                                <span x-show="!isFormComplete" class="mr-2">Complete Selection to Submit</span>
-                                <span x-show="isFormComplete">Submit Final Vote</span>
-                            </button>
+
+                            <template x-if="currentStep < totalSteps - 1">
+                                <button type="button" @click="nextStep()"
+                                        class="flex-1 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest transition bg-gradient-to-r from-sky-500 to-blue-400 text-white shadow-lg shadow-sky-200">
+                                    Next →
+                                </button>
+                            </template>
+
+                            <template x-if="currentStep === totalSteps - 1">
+                                <button type="submit"
+                                        :disabled="isSubmitting"
+                                        class="flex-1 py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest transition bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200 disabled:opacity-50">
+                                    Review & Submit →
+                                </button>
+                            </template>
                         </div>
                     </div>
-                </div>
+                </template>
+
+                {{-- Vote Summary --}}
+                <template x-if="Object.keys(votes).length > 0">
+                    <div class="mt-6 rounded-2xl overflow-hidden" style="background:#e0f2fe; border:1px solid #bae6fd;">
+                        <div class="px-5 py-3 border-b" style="background:#bae6fd; border-color:#7dd3fc;">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-sky-700">📋 Your Votes So Far</p>
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <template x-for="(candidateId, posId) in votes" :key="posId">
+                                <div class="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase truncate mr-2" x-text="getPositionName(posId)"></span>
+                                    <span class="text-[11px] font-black text-sky-600 uppercase text-right truncate" x-text="getCandidateName(posId, candidateId)"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
             </form>
         </div>
     </main>
 
-    <footer class="mt-auto border-t bg-white py-8">
-        <div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-            <p class="text-sm font-semibold text-gray-900">CATALINO D. CEREZO NATIONAL HIGH SCHOOL</p>
-            <p class="mt-1 text-sm text-gray-500">&copy; {{ date('Y') }} Secure Student Voting System. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <div x-show="showConfirmModal" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
-        <div x-show="showConfirmModal" 
-             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" 
-             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" 
-             class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"></div>
-
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div x-show="showConfirmModal" 
-                     x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
-                     x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
-                     class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                    
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                                <h3 class="text-xl font-bold leading-6 text-gray-900" id="modal-title">Confirm Submission</h3>
-                                <p class="mt-2 text-sm text-gray-500">You are about to cast your vote. Please review your choices below.</p>
-                                
-                                <div class="mt-4 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-100 bg-gray-50">
-                                    <ul role="list" class="divide-y divide-gray-100">
-                                        <template x-for="pos in positionsData" :key="pos.id">
-                                            <li class="flex items-center justify-between py-3 px-4">
-                                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500" x-text="pos.title"></span>
-                                                <span class="text-sm font-medium text-gray-900 text-right" x-text="getSelectedName(pos.id)"></span>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button" @click="submitForm()" class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto">Confirm & Vote</button>
-                        <button type="button" @click="showConfirmModal = false" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Go Back</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('dashboards.voter-dashboard.layout.footer')
 
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('votingSystem', (positions) => ({
+        const electionData = @json($election);
+        const submitUrl = "{{ route('voter.vote.store', $election->id) }}";
+        const dashboardUrl = "{{ route('voter.dashboard') }}";
+
+        function votingFlow() {
+            return {
+                currentStep: 0,
                 votes: {},
-                names: {},
-                positionsData: positions,
-                showConfirmModal: false,
+                showModal: false,
+                showReview: false,
+                modalCandidate: {},
+                isSubmitting: false,
 
-                get totalPositions() { return this.positionsData.length; },
-                
-                get voteCount() { 
-                    return Object.keys(this.votes).filter(k => this.votes[k].length > 0).length; 
-                },
-                
-                get isFormComplete() { return this.voteCount === this.totalPositions; },
-
-                get progressPercentage() {
-                    return (this.voteCount / this.totalPositions) * 100;
+                get positions() { return electionData.positions || []; },
+                get totalSteps() { return this.positions.length; },
+                get currentPosition() { return this.positions[this.currentStep]; },
+                get hasVotedForCurrentPosition() {
+                    return this.currentPosition && this.votes[this.currentPosition.id];
                 },
 
-                toggleVote(posId, candId, maxAllowed, candName) {
-                    if (!this.votes[posId]) this.votes[posId] = [];
-                    this.names[candId] = candName; 
+                selectCandidate(candidateId) {
+                    if (this.currentPosition) this.votes[this.currentPosition.id] = candidateId;
+                },
 
-                    const index = this.votes[posId].indexOf(candId);
-
-                    if (maxAllowed === 1) {
-                        this.votes[posId] = [candId]; // Radio behavior
-                    } else {
-                        if (index === -1) {
-                            if (this.votes[posId].length < maxAllowed) {
-                                this.votes[posId].push(candId);
-                            } else {
-                                alert(`Limit reached: You can only choose ${maxAllowed} candidates.`);
-                            }
-                        } else {
-                            this.votes[posId].splice(index, 1);
-                        }
+                nextStep() {
+                    if (this.currentStep < this.totalSteps - 1) {
+                        this.currentStep++;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 },
 
-                isSelected(posId, candId) {
-                    return this.votes[posId] && this.votes[posId].includes(candId);
-                },
-
-                isPositionFilled(posId) {
-                    return this.votes[posId] && this.votes[posId].length > 0;
-                },
-
-                getSelectedName(posId) {
-                    if (!this.votes[posId] || this.votes[posId].length === 0) return 'Skipped / None';
-                    return this.votes[posId].map(id => this.names[id]).join(', ');
-                },
-
-                prepareConfirmation() {
-                    if (this.isFormComplete) {
-                        this.showConfirmModal = true;
-                    } else {
-                        // Find first unvoted position and scroll to it
-                        const firstEmpty = this.positionsData.find(p => !this.votes[p.id] || this.votes[p.id].length === 0);
-                        if(firstEmpty) {
-                            const el = document.getElementById(`position-${firstEmpty.id}`);
-                            if(el) {
-                                el.scrollIntoView({behavior: 'smooth', block: 'center'});
-                                el.classList.add('animate-pulse');
-                                setTimeout(() => el.classList.remove('animate-pulse'), 1000);
-                            }
-                        }
+                prevStep() {
+                    if (this.currentStep > 0) {
+                        this.currentStep--;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 },
 
-                submitForm() {
-                    document.getElementById('votingForm').submit();
+                openReview() { this.showReview = true; },
+
+                showCandidateProfile(candidate) {
+                    this.modalCandidate = {
+                        name: candidate.full_name,
+                        party: candidate.party || 'Independent',
+                        position: this.currentPosition.title,
+                        bio: candidate.bio || '',
+                        manifesto: candidate.manifesto || '',
+                        photo: candidate.photo_path ? '/storage/' + candidate.photo_path : '',
+                        initials: candidate.first_name ? candidate.first_name.charAt(0) : '?'
+                    };
+                    this.showModal = true;
+                },
+
+                async confirmSubmit() {
+                    this.isSubmitting = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').content;
+                        const response = await fetch(submitUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({ votes: this.votes }),
+                        });
+                        const data = await response.json();
+                        window.location.href = data.redirect || dashboardUrl;
+                    } catch (error) {
+                        alert('Submission failed. Please try again.');
+                        this.isSubmitting = false;
+                    }
+                },
+
+                getPositionName(posId) {
+                    const pos = this.positions.find(p => p.id == posId);
+                    return pos?.title || 'Position';
+                },
+
+                getCandidateName(posId, candId) {
+                    const pos = this.positions.find(p => p.id == posId);
+                    if (!pos) return 'Unknown';
+                    const cand = pos.candidates.find(c => c.id == candId);
+                    return cand ? (cand.first_name + ' ' + cand.last_name) : 'Unknown';
                 }
-            }));
+            };
+        }
+
+        /* Dark mode icon sync */
+        document.addEventListener('DOMContentLoaded', function () {
+            const isDark = localStorage.getItem('voterDarkMode') === 'true';
+            document.querySelectorAll('.icon-moon').forEach(el => el.classList.toggle('hidden', isDark));
+            document.querySelectorAll('.icon-sun').forEach(el => el.classList.toggle('hidden', !isDark));
         });
+
+        function toggleDark() {
+            const isDark = document.documentElement.classList.toggle('dark-mode');
+            localStorage.setItem('voterDarkMode', isDark);
+            document.querySelectorAll('.icon-moon').forEach(el => el.classList.toggle('hidden', isDark));
+            document.querySelectorAll('.icon-sun').forEach(el => el.classList.toggle('hidden', !isDark));
+        }
     </script>
 </body>
 </html>

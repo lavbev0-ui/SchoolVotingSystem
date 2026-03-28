@@ -4,39 +4,60 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
-    // Display the settings
     public function index()
     {
-        // Fetch all settings as a collection keyed by the 'key' column for easy access
-        $settings = Setting::all()->keyBy('key');
+        $dbSettings = Setting::pluck('value', 'setting_key')->toArray();
+
+        $settings = array_merge([
+            'allow_vote_changes' => '0',
+            'real_time_results'  => '0',
+            'require_2fa'        => '0',
+            'require_admin_2fa'  => '0',
+            'session_timeout'    => '30',
+        ], $dbSettings);
 
         return view('dashboards.admin-dashboard.settings.index', compact('settings'));
     }
 
-    // Update the settings
     public function update(Request $request)
     {
-        $data = $request->except('_token', '_method');
+        // ✅ Dagdag na require_admin_2fa sa listahan
+        $keys = [
+            'allow_vote_changes',
+            'real_time_results',
+            'require_2fa',
+            'require_admin_2fa',
+            'session_timeout',
+        ];
 
-        foreach ($data as $key => $value) {
-            // Update the setting if it exists in our DB
-            Setting::where('key', $key)->update(['value' => $value]);
-        }
-        
-        // Handle unchecked checkboxes (boolean fields)
-        // If a checkbox is unchecked, it isn't sent in the request, so we must manually set it to 0
-        $booleans = ['allow_vote_changes', 'real_time_results', 'require_2fa'];
-        foreach ($booleans as $key) {
-            if (!$request->has($key)) {
-                Setting::where('key', $key)->update(['value' => '0']);
+        DB::transaction(function () use ($request, $keys) {
+            foreach ($keys as $key) {
+                $oldValue = (string) Setting::where('setting_key', $key)->value('value');
+                $newValue = (string) $request->input($key, '0');
+
+                Setting::updateOrCreate(
+                    ['setting_key' => $key],
+                    ['value'       => $newValue]
+                );
+
+                // ✅ Log sa AdminActivityLog kung may nagbago
+                if ($oldValue !== $newValue) {
+                    AdminDashboardController::logAction(
+                        'updated_setting',
+                        "Setting [{$key}] changed from [{$oldValue}] to [{$newValue}]"
+                    );
+                }
             }
-        }
+        });
 
-        cache()->forget('setting_session_timeout');
+        Cache::forget('settings');
 
-        return redirect()->back()->with('success', 'Settings updated successfully.');
+        return back()->with('success', 'System preferences have been saved successfully!');
     }
 }

@@ -1,271 +1,154 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Voter Profile') }}
-            </h2>
-            <a href="{{ route('dashboard.voters.index') }}" class="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1">
-                &larr; Back to List
-            </a>
-        </div>
-    </x-slot>
-
-    {{-- Setup Status Logic (Mimicking the React getStatusConfig) --}}
-    @php
-        $isActive = $voter->is_active;
+    <div class="p-6 bg-slate-50 min-h-screen">
         
-        $statusStyles = $isActive 
-            ? [
-                'bg' => 'bg-gradient-to-br from-green-50 to-emerald-50',
-                'border' => 'border-green-200',
-                'text' => 'text-green-700',
-                'icon_color' => 'text-green-600',
-                'label' => 'Active Account'
-            ]
-            : [
-                'bg' => 'bg-gradient-to-br from-yellow-50 to-amber-50',
-                'border' => 'border-yellow-200',
-                'text' => 'text-yellow-700',
-                'icon_color' => 'text-yellow-600',
-                'label' => 'Pending Activation'
-            ];
-    @endphp
+        {{-- TOP NAVIGATION --}}
+        <div class="max-w-4xl mx-auto mb-6 flex items-center justify-between">
+            {{-- FIX: Iniba ang route name mula dashboard.voters.index patungong admin.voters.index --}}
+            <a href="{{ route('admin.voters.index') }}" class="group flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:bg-blue-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </div>
+                <span class="text-sm font-bold tracking-tight">Back to Registry</span>
+            </a>
+            
+            <div class="flex gap-2">
+                {{-- FIX: Iniba ang route name patungong admin.voters.edit --}}
+                <a href="{{ route('admin.voters.edit', $voter->id) }}" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                    Edit Profile
+                </a>
+            </div>
+        </div>
 
-    <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            {{-- Main Container (replaces DialogContent) --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
                 
-                {{-- Header Section --}}
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="text-2xl font-semibold tracking-tight">Voter Profile</h3>
-                    <p class="text-sm text-gray-500">Complete information and voting history</p>
+                {{-- HEADER/BANNER --}}
+                @php
+                    $isActive = $voter->is_active ?? true; 
+                @endphp
+                <div class="relative h-32 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600">
+                    <div class="absolute -bottom-12 left-8 flex items-end gap-6">
+                        <div class="relative">
+                            <div class="w-32 h-32 rounded-3xl bg-white p-1.5 shadow-xl">
+                                @if($voter->photo_path)
+                                    <img src="{{ asset('storage/' . $voter->photo_path) }}" class="w-full h-full object-cover rounded-[1.2rem]">
+                                @else
+                                    {{-- FIX: Ginagamit ang photo_url accessor na ginawa natin sa Model --}}
+                                    <img src="{{ $voter->photo_url }}" class="w-full h-full object-cover rounded-[1.2rem]">
+                                @endif
+                            </div>
+                            <div class="absolute bottom-2 -right-2 w-8 h-8 {{ $isActive ? 'bg-emerald-500' : 'bg-slate-400' }} border-4 border-white rounded-full shadow-sm"></div>
+                        </div>
+                        <div class="mb-2">
+                            <h1 class="text-2xl font-black text-slate-800 tracking-tight">
+                                {{ $voter->full_name }}
+                            </h1>
+                            {{-- Ginagamit ang student_id gaya ng nasa database schema --}}
+                            <p class="text-slate-500 font-bold text-sm">STUDENT ID: <span class="text-blue-600 font-mono">{{ $voter->student_id }}</span></p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="p-6 space-y-6">
-                    
-                    {{-- 1. Profile Banner Section --}}
-                    <div class="{{ $statusStyles['bg'] }} {{ $statusStyles['border'] }} border-2 rounded-xl p-6">
-                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+                <div class="pt-20 px-8 pb-8">
+                    {{-- STATS STRIP --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+                        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</p>
+                            <p class="text-sm font-bold {{ $isActive ? 'text-emerald-600' : 'text-slate-500' }} mt-1">
+                                {{ $isActive ? 'Verified Active' : 'Account Disabled' }}
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grade & Section</p>
+                            <p class="text-sm font-bold text-slate-700 mt-1">
+                                {{ $voter->gradeLevel->name ?? 'N/A' }} - {{ $voter->section->name ?? 'N/A' }}
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-right">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registered On</p>
+                            <p class="text-sm font-bold text-slate-700 mt-1">
+                                {{ $voter->created_at ? $voter->created_at->format('M d, Y') : 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        {{-- DETAILS --}}
+                        <div>
+                            <h3 class="text-sm font-black text-slate-800 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
+                                Personal Information
+                            </h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Full Legal Name</label>
+                                    <p class="text-slate-700 font-bold border-b border-slate-50 pb-2 mt-1 uppercase">
+                                        {{ $voter->full_name }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Email Address</label>
+                                    <p class="text-slate-700 font-bold border-b border-slate-50 pb-2 mt-1">{{ $voter->email ?? 'No email provided' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- VOTING HISTORY --}}
+                        <div>
+                            <h3 class="text-sm font-black text-slate-800 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-indigo-600 rounded-full"></span>
+                                Participation History
+                            </h3>
                             
-                            {{-- Avatar --}}
-                            <div class="relative">
-                                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-                                    @if($voter->photo_path)
-                                        <img src="{{ asset('storage/' . $voter->photo_path) }}" alt="Photo" class="w-full h-full object-cover">
-                                    @else
-                                        {{-- User Icon --}}
-                                        <svg class="w-10 h-10 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    @endif
-                                </div>
-                                <div class="absolute -bottom-1 -right-1 w-7 h-7 {{ $statusStyles['bg'] }} rounded-full flex items-center justify-center border-2 {{ $statusStyles['border'] }}">
-                                    @if($isActive)
-                                        <svg class="w-4 h-4 {{ $statusStyles['icon_color'] }}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-                                    @else
-                                        <svg class="w-4 h-4 {{ $statusStyles['icon_color'] }}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                    @endif
-                                </div>
-                            </div>
+                            @php
+                                // Kinukuha ang unique elections kung saan bumoto ang voter
+                                $history = $voter->votes ? $voter->votes->unique('election_id') : collect();
+                            @endphp
 
-                            <div class="flex-1">
-                                <h3 class="text-2xl font-bold text-gray-900 mb-2">
-                                    {{ $voter->first_name }} {{ $voter->middle_name ? $voter->middle_name[0].'.' : '' }} {{ $voter->last_name }} {{ $voter->suffix }}
-                                </h3>
-                                
-                                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
-                                    {{-- ID Badge --}}
-                                    <span class="inline-flex items-center rounded-md border border-gray-200 px-2.5 py-0.5 text-xs font-semibold text-gray-700 font-mono">
-                                        ID: {{ $voter->userID }}
-                                    </span>
-                                    {{-- Status Badge --}}
-                                    <span class="inline-flex items-center rounded-md border {{ $statusStyles['border'] }} {{ $statusStyles['bg'] }} px-2.5 py-0.5 text-xs font-semibold {{ $statusStyles['text'] }}">
-                                        @if($isActive)
-                                            <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-                                        @else
-                                            <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        @endif
-                                        {{ $statusStyles['label'] }}
-                                    </span>
-                                </div>
-
-                                {{-- Quick Stats --}}
-                                <div class="flex justify-center sm:justify-start gap-6 mt-4">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-10 h-10 bg-white/80 rounded-lg flex items-center justify-center shadow-sm">
-                                            {{-- Vote Icon --}}
-                                            <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></svg>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Elections Voted</p>
-                                            <p class="text-lg font-bold text-gray-900">
-                                                {{-- Placeholder for relationship count --}}
-                                                {{ $voter->participatedElections ? count($voter->participatedElections) : 0 }}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-10 h-10 bg-white/80 rounded-lg flex items-center justify-center shadow-sm">
-                                            {{-- Calendar Icon --}}
-                                            <svg class="w-5 h-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Member Since</p>
-                                            <p class="text-sm font-semibold text-gray-900">
-                                                {{ $voter->created_at->format('M Y') }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Separator --}}
-                    <div class="h-px w-full bg-gray-200"></div>
-
-                    {{-- 2. Personal Information Grid --}}
-                    <div>
-                        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900">
-                            {{-- User Icon Small --}}
-                            <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            Personal Information
-                        </h4>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {{-- Email --}}
-                            <div class="bg-white rounded-lg border-2 border-gray-100 p-6 hover:border-blue-200 transition-colors">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Email Address</p>
-                                        <p class="text-sm font-medium text-gray-900 truncate">{{ $voter->email }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Registration Date --}}
-                            <div class="bg-white rounded-lg border-2 border-gray-100 p-6 hover:border-purple-200 transition-colors">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Registration Date</p>
-                                        <p class="text-sm font-medium text-gray-900">{{ $voter->created_at->format('F d, Y') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Separator --}}
-                    <div class="h-px w-full bg-gray-200"></div>
-
-                    {{-- 3. Academic Information --}}
-                    <div>
-                        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900">
-                            {{-- Graduation Cap Icon --}}
-                            <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                            Academic Information
-                        </h4>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {{-- Grade Level --}}
-                            <div class="bg-white rounded-lg border-2 border-gray-100 p-6 hover:border-orange-200 transition-colors">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        {{-- Award Icon --}}
-                                        <svg class="w-5 h-5 text-orange-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Grade Level</p>
-                                        <p class="text-lg font-bold text-orange-600">{{ $voter->gradeLevel->name ?? 'N/A' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Section --}}
-                            <div class="bg-white rounded-lg border-2 border-gray-100 p-6 hover:border-indigo-200 transition-colors">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        {{-- Users Icon --}}
-                                        <svg class="w-5 h-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Section</p>
-                                        <p class="text-lg font-bold text-indigo-600">{{ $voter->section->name ?? 'N/A' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Separator --}}
-                    <div class="h-px w-full bg-gray-200"></div>
-
-                    {{-- 4. Voting History (Conditional) --}}
-                    <div>
-                        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-gray-900">
-                            {{-- Vote Icon --}}
-                            <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></svg>
-                            Voting History
-                        </h4>
-
-                        @if(false) {{-- Replace 'false' with '$voter->participatedElections && $voter->participatedElections->count() > 0' when you have the relationship --}}
-                             <div class="space-y-3">
-                                {{-- Loop through elections here --}}
-                                {{-- 
-                                @foreach($voter->participatedElections as $election)
-                                    <div class="bg-white rounded-lg border-2 border-gray-100 p-4 hover:shadow-md transition-all">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                                                <svg class="w-6 h-6 text-white" ...check icon...></svg>
+                            @if($history->count() > 0)
+                                <div class="space-y-3">
+                                    @foreach($history as $vote)
+                                        <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                                </div>
+                                                <span class="text-xs font-bold text-slate-700 truncate max-w-[150px]">
+                                                    {{ $vote->election->title ?? 'Untitled Election' }}
+                                                </span>
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="font-medium text-gray-900">{{ $election->title }}</p>
-                                                <p class="text-xs text-gray-500 mt-1">Vote successfully recorded</p>
-                                            </div>
-                                            <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">Completed</span>
+                                            <span class="text-[9px] font-black text-slate-400 uppercase">
+                                                {{ $vote->created_at->diffForHumans() }}
+                                            </span>
                                         </div>
-                                    </div>
-                                @endforeach
-                                --}}
-                            </div>
-                        @else
-                            {{-- Empty State --}}
-                            <div class="border-2 border-dashed border-gray-200 rounded-lg p-12 text-center">
-                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></svg>
+                                    @endforeach
                                 </div>
-                                <p class="text-gray-500 font-medium">No voting history yet</p>
-                                <p class="text-sm text-gray-400 mt-1">This voter hasn't participated in any elections</p>
-                            </div>
-                        @endif
+                            @else
+                                <div class="bg-slate-50 rounded-[2rem] p-10 text-center border-2 border-dashed border-slate-200">
+                                    <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mx-auto mb-4">
+                                        <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </div>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">No Votes Recorded Yet</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
-
                 </div>
 
-                {{-- Footer / Actions --}}
-                <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
-                    
-                    {{-- Delete --}}
-                    <form action="{{ route('dashboard.voters.destroy', $voter->id) }}" method="POST" onsubmit="return confirm('Are you sure?');">
+                {{-- FOOTER / INFO --}}
+                <div class="bg-slate-50 border-t border-slate-100 px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        Record updated: {{ $voter->updated_at->diffForHumans() }}
+                    </p>
+                    {{-- FIX: Iniba ang destroy route name patungong admin.voters.destroy --}}
+                    <form action="{{ route('admin.voters.destroy', $voter->id) }}" method="POST" onsubmit="return confirm('WARNING: This will permanently delete this voter record. Proceed?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background hover:bg-red-100 hover:text-red-700 h-10 py-2 px-4 text-red-600">
-                            Delete
+                        <button type="submit" class="text-red-400 hover:text-red-600 text-[10px] font-black uppercase tracking-[0.2em] transition-colors">
+                            Purge Record
                         </button>
                     </form>
-
-                    {{-- Edit --}}
-                    <a href="{{ route('dashboard.voters.edit', $voter->id) }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-gray-900 text-white hover:bg-gray-900/90 h-10 py-2 px-4">
-                        Edit Details
-                    </a>
                 </div>
-
             </div>
         </div>
     </div>

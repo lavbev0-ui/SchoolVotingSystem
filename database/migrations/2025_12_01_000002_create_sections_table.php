@@ -9,11 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sections', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('grade_level_id')->constrained('grade_levels') ->onDelete('cascade');
-            $table->string('name'); 
-            $table->timestamps();
-        });
+    $table->id();
+    $table->string('name');
+    $table->unsignedBigInteger('grade_level_id');
+    $table->string('year_level'); 
+    $table->timestamps();
+});
+
     }
 
     public function down(): void

@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // ✅ Twilio SMS
+    'twilio' => [
+    'sid'        => env('TWILIO_SID'),
+    'token'      => env('TWILIO_TOKEN'),
+    'from'       => env('TWILIO_FROM'),
+    'verify_sid' => env('TWILIO_VERIFY_SID'), 
+],
+
 ];

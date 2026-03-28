@@ -1,133 +1,107 @@
 <x-app-layout>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
-            {{-- HEADER --}}
-            <div class="flex items-center justify-between">
+            {{-- HEADER SECTION --}}
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Manage Elections</h2>
-                    <p class="text-sm text-gray-500">Create and manage all elections</p>
+                    <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">Election Management</h2>
+                    <p class="text-sm text-slate-500 font-medium italic">Monitor and view ongoing or completed school elections.</p>
                 </div>
                 
-                <a href="{{ route('dashboard.elections.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150" wire:navigate>
-                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Create Election
-                </a>
+                <div class="flex flex-wrap gap-3">
+                    {{-- Ginamit ang admin.elections.create base sa web.php --}}
+                    <a href="{{ route('admin.elections.create') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                        Create New
+                    </a>
+                </div>
+            </div>
+
+            {{-- SEARCH BAR --}}
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                <form method="GET" action="{{ route('admin.elections.index') }}" class="flex flex-col md:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </div>
+                        <input type="text" name="search" value="{{ request('search') }}" 
+                            class="block w-full pl-12 pr-4 py-4 border-slate-200 rounded-[1.5rem] text-sm font-bold focus:ring-indigo-500 shadow-sm border" 
+                            placeholder="Search election title..." />
+                    </div>
+                    <button type="submit" class="px-8 py-4 bg-slate-100 text-slate-700 text-xs font-black uppercase tracking-widest rounded-[1.5rem] hover:bg-slate-200 transition">Filter Results</button>
+                </form>
             </div>
 
             {{-- LIST OF ELECTIONS --}}
-            <div class="space-y-4">
+            <div class="space-y-6">
                 @forelse ($elections as $election)
-                    <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200">
-                        
-                        {{-- Card Header --}}
-                        <div class="p-6 border-b border-gray-100">
-                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+                        <div class="p-8">
+                            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+                                
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-2">
-                                        <h3 class="text-lg font-semibold text-gray-900">{{ $election->title }}</h3>
-                                        
                                         @php
-                                            $statusClasses = match($election->status) {
-                                                'active' => 'bg-green-100 text-green-700 border border-green-200',
-                                                'completed' => 'bg-blue-100 text-blue-700 border border-blue-200',
-                                                'upcoming' => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-                                                'archived' => 'bg-gray-100 text-gray-600 border border-gray-200',
-                                                default => 'bg-gray-100 text-gray-700',
-                                            };
+                                            $now = now();
+                                            $isCompleted = $election->end_at && $election->end_at < $now;
+                                            $isActive = $election->is_active && $now->between($election->start_at, $election->end_at);
                                         @endphp
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusClasses }} capitalize">
-                                            {{ $election->status }}
+                                        
+                                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border 
+                                            {{ $isCompleted ? 'bg-slate-50 text-slate-400 border-slate-100' : 
+                                               ($isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100 animate-pulse' : 'bg-amber-50 text-amber-600 border-amber-100') }}">
+                                            {{ $isCompleted ? 'Completed' : ($isActive ? 'Active' : 'Upcoming/Inactive') }}
+                                        </span>
+                                        <h3 class="text-2xl font-black text-slate-900 uppercase tracking-tight">{{ $election->title }}</h3>
+                                    </div>
+                                    
+                                    <p class="text-sm text-slate-500 font-medium mb-4 leading-relaxed max-w-2xl">
+                                        {{ $election->description ?? 'No description provided for this election.' }}
+                                    </p>
+
+                                    <div class="flex flex-wrap gap-x-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"/></svg>
+                                            Started: {{ optional($election->start_at)->format('M d, Y h:i A') ?? 'TBD' }}
+                                        </span>
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg>
+                                            Ends: {{ optional($election->end_at)->format('M d, Y h:i A') ?? 'TBD' }}
                                         </span>
                                     </div>
-                                    <p class="text-sm text-gray-500">
-                                        {{ $election->start_at->format('M d, Y h:i A') }} - 
-                                        {{ $election->end_at->format('M d, Y h:i A') }}
-                                    </p>
                                 </div>
 
-                                {{-- ACTION BUTTONS --}}
-                                <div class="flex gap-2 items-center">
-                                    {{-- Edit Button --}}
-                                    <a href="{{ route('dashboard.elections.edit', $election->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-medium text-xs text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                                        Edit
-                                    </a>
-                                    
-                                    {{-- View Button --}}
-                                    <a href="{{ route('dashboard.elections.show', $election->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-medium text-xs text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                                        View
-                                    </a>
+                                <div class="flex gap-10 px-8 border-x border-slate-50 hidden xl:flex">
+                                    <div class="text-center">
+                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Positions</p>
+                                        <p class="text-xl font-black text-slate-800">{{ $election->positions_count ?? 0 }}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Votes</p>
+                                        <p class="text-xl font-black text-slate-800">{{ $election->votes_count ?? 0 }}</p>
+                                    </div>
+                                </div>
 
-                                    {{-- Delete Button --}}
-                                    <form action="{{ route('dashboard.elections.destroy', $election->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this election? All associated votes and candidates will be permanently deleted.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-red-50 border border-red-300 rounded-md font-medium text-xs text-red-700 shadow-sm hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                                            Delete
-                                        </button>
-                                    </form>
+                                <div>
+                                    {{-- FIX: 'View Details' na lang ang natira, tinanggal ang Edit button --}}
+                                    <a href="{{ route('admin.elections.show', $election->id) }}" class="inline-flex items-center justify-center px-10 py-4 bg-slate-50 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-100">
+                                        View Details
+                                    </a>
                                 </div>
                             </div>
                         </div>
-
-                        {{-- Card Stats --}}
-                        <div class="p-6">
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <p class="text-sm text-gray-500">Positions</p>
-                                    <p class="text-lg font-semibold text-gray-900">{{ $election->positions_count }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Candidates</p>
-                                    <p class="text-lg font-semibold text-gray-900">{{ $election->candidates_count }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Votes Cast</p>
-                                    <p class="text-lg font-semibold text-gray-900">{{ $election->votes_count }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Turnout (Approx)</p>
-                                    <p class="text-lg font-semibold text-gray-900">
-                                        @if(isset($totalVoters) && $totalVoters > 0)
-                                            {{ round(($election->votes_count / $totalVoters) * 100, 1) }}%
-                                        @else
-                                            0%
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
                 @empty
-                    {{-- EMPTY STATE --}}
-                    <div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No elections found</h3>
-                        <p class="mt-1 text-sm text-gray-500">Get started by creating a new election.</p>
-                        <div class="mt-6">
-                            <a href="{{ route('dashboard.elections.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                </svg>
-                                Create Election
-                            </a>
-                        </div>
+                    <div class="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+                        <p class="text-slate-400 font-black uppercase text-xs tracking-widest italic">No elections available to display.</p>
                     </div>
                 @endforelse
-                
-                {{-- Pagination Links (if you used paginate in controller) --}}
-                @if(method_exists($elections, 'links'))
-                    <div class="mt-4">
-                        {{ $elections->links() }}
-                    </div>
-                @endif
             </div>
-            
+
+            <div class="mt-8">
+                {{ $elections->appends(request()->query())->links() }}
+            </div>
         </div>
     </div>
 </x-app-layout>

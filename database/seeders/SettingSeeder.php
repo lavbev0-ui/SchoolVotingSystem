@@ -11,33 +11,20 @@ class SettingSeeder extends Seeder
     {
         $settings = [
             [
-                'key' => 'allow_vote_changes',
+                'setting_key' => 'allow_vote_changes',
+                'value' => 'false',
                 'label' => 'Allow Vote Changes',
-                'value' => '0', // Disabled
                 'type' => 'boolean'
             ],
-            [
-                'key' => 'real_time_results',
-                'label' => 'Real-time Results',
-                'value' => '0', // Disabled
-                'type' => 'boolean'
-            ],
-            [
-                'key' => 'require_2fa',
-                'label' => 'Two-Factor Authentication',
-                'value' => '1', // Enabled
-                'type' => 'boolean'
-            ],
-            [
-                'key' => 'session_timeout',
-                'label' => 'Session Timeout',
-                'value' => '30', // 30 minutes
-                'type' => 'number'
-            ],
+            // Dagdagan mo dito kung may iba ka pang settings...
         ];
 
         foreach ($settings as $setting) {
-            Setting::updateOrCreate(['key' => $setting['key']], $setting);
+            // DAPAT 'setting_key' ang nakalagay sa dalawang ito:
+            Setting::updateOrCreate(
+                ['setting_key' => $setting['setting_key']], 
+                $setting
+            );
         }
     }
 }

@@ -1,43 +1,50 @@
 <?php
-
 namespace App\Http\Middleware;
-
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Setting;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Cache;
 
 class CheckSessionTimeout
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Only run this check if the user is logged in
         if (Auth::guard('voter')->check()) {
-            
-            // 2. Get the timeout value from DB (default to 120 mins if missing)
-            // We use cache to avoid hitting the DB on every single click
-            $timeoutMinutes = cache()->remember('setting_session_timeout', 60, function () {
-                return Setting::where('key', 'session_timeout')->value('value') ?? 120;
+
+            // Skip timeout check para sa POST requests
+            if ($request->isMethod('post')) {
+                return $next($request);
+            }
+
+            $timeoutMinutes = Cache::remember('setting_session_timeout', 60, function () {
+                return (int) Setting::where('setting_key', 'session_timeout')->value('value') ?: 30;
             });
 
             $timeoutSeconds = $timeoutMinutes * 60;
-            
-            // 3. Check Last Activity
-            $lastActivity = session('last_activity_time');
-            
+            $lastActivity   = session('last_activity_time');
+
             if ($lastActivity && (time() - $lastActivity > $timeoutSeconds)) {
-                // TIMEOUT REACHED: Log them out
                 Auth::guard('voter')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                session()->forget(['last_activity_time', 'voter_2fa_verified']);
+                session()->regenerateToken();
+
+                // ✅ Kung AJAX/fetch request ang nag-expire, ibalik ang JSON
+                // para ang frontend ay makapag-redirect nang maayos
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['expired' => true, 'redirect' => route('voter.login')], 401);
+                }
 
                 return redirect()->route('voter.login')
-                    ->withErrors(['userID' => 'Session timed out due to inactivity.']);
+                    ->withErrors(['session' => 'Ang iyong session ay nag-expire na. Mangyaring mag-log in muli.']);
             }
 
-            // 4. Update Last Activity Time
-            session(['last_activity_time' => time()]);
+            // ✅ I-update ang last_activity_time sa REAL requests lang
+            // Hindi sa background AJAX/fetch — para gumana ang session timeout
+            if (!$request->ajax() && !$request->wantsJson()) {
+                session(['last_activity_time' => time()]);
+            }
         }
 
         return $next($request);

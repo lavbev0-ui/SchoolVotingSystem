@@ -1,389 +1,209 @@
 <x-app-layout>
     <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         
-        {{-- Header --}}
-        <div class="mb-8">
-            <h2 class="text-2xl font-bold text-gray-900">Add New Voter</h2>
-            <p class="text-sm text-gray-500">Create a new student account to allow them to vote in elections</p>
+        <div class="mb-6 flex justify-between items-end">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Add New Voter</h2>
+                <p class="text-sm text-slate-500 italic">Register a new student account to the voting system.</p>
+            </div>
+            <a href="{{ route('admin.voters.index') }}" class="text-xs font-black text-sky-600 hover:text-sky-700 uppercase tracking-widest border-b-2 border-sky-100 hover:border-sky-600 transition-all">
+                View Voter List →
+            </a>
         </div>
 
-        {{-- Form Card --}}
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
-            <div class="p-6">
-                
-                <form action="{{ route('dashboard.voters.store') }}" method="POST" enctype="multipart/form-data" id="createVoterForm">
+        <div class="bg-white shadow-xl rounded-[2.5rem] border border-slate-100 overflow-hidden">
+            <div class="p-10">
+                <form action="{{ route('admin.voters.store') }}" method="POST" enctype="multipart/form-data" id="createVoterForm">
                     @csrf
+                    
+                    <div class="space-y-8">
 
-                    <div class="space-y-6">
-
-                        {{-- Student ID Section --}}
-                        <div class="space-y-2">
-                            <label for="userID" class="block text-sm font-medium text-gray-700">
-                                Student ID <span class="text-red-500">*</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <div class="flex-1 relative">
-                                    <input 
-                                        type="text" 
-                                        name="userID" 
-                                        id="userID" 
-                                        value="{{ old('userID') }}"
-                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('userID') border-red-500 @enderror" 
-                                        placeholder="e.g., 2026001"
-                                        required
-                                    >
-                                    @error('userID')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
+                        {{-- Photo & Student ID Section --}}
+                        <div class="flex flex-col md:flex-row gap-8 items-center bg-slate-50/50 p-8 rounded-[2rem] border border-slate-100">
+                            <div class="flex-shrink-0">
+                                <div class="relative group">
+                                    <div id="imagePreviewContainer" class="w-28 h-28 rounded-[2rem] bg-white flex items-center justify-center border-2 border-dashed border-slate-200 overflow-hidden relative shadow-inner group-hover:border-sky-400 transition-colors">
+                                        <svg id="defaultUserIcon" xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-slate-200 group-hover:text-sky-200 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        <img id="imagePreview" src="#" alt="Preview" class="w-full h-full object-cover hidden">
+                                        <input type="file" name="photo_path" id="photo_path" accept="image/*" onchange="handleImageUpload(this)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                                    </div>
+                                    <button type="button" onclick="removeImage()" id="removeImageBtn" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg hidden z-20 hover:bg-rose-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-3 text-center">Student Photo</p>
                                 </div>
-                                <button type="button" onclick="generateStudentId()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Generate
-                                </button>
+                                @error('photo_path') <p class="text-[9px] text-rose-500 font-bold mt-1 text-center uppercase tracking-tighter">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Student ID *</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" name="student_id" id="student_id" value="{{ old('student_id') }}" class="block w-full rounded-2xl border-slate-200 p-3.5 text-sm focus:ring-sky-500 focus:border-sky-500 shadow-sm border @error('student_id') border-rose-500 @enderror" placeholder="e.g., 2026001" required>
+                                        <button type="button" onclick="generateStudentId()" class="p-3.5 bg-white border border-slate-200 rounded-2xl hover:bg-sky-50 transition shadow-sm text-sky-600 active:scale-95">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                        </button>
+                                    </div>
+                                    @error('student_id') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
+                                </div>
+
+                                {{-- ✅ Email OR Phone Number --}}
+                                <div class="space-y-1.5" x-data="{ hasEmail: true }">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <span x-show="hasEmail">Email Address</span>
+                                            <span x-show="!hasEmail">Phone Number</span>
+                                        </label>
+                                        <button type="button" @click="hasEmail = !hasEmail"
+                                            class="text-[9px] font-black uppercase tracking-widest text-sky-500 hover:text-sky-700 transition">
+                                            <span x-show="hasEmail">Use Phone Instead →</span>
+                                            <span x-show="!hasEmail">Use Email Instead →</span>
+                                        </button>
+                                    </div>
+
+                                    {{-- Email Field --}}
+                                    <div x-show="hasEmail">
+                                        <input type="email" name="email" value="{{ old('email') }}"
+                                            class="block w-full rounded-2xl border-slate-200 p-3.5 text-sm focus:ring-sky-500 shadow-sm border @error('email') border-rose-500 @enderror"
+                                            placeholder="student@example.com">
+                                        @error('email') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
+                                    </div>
+
+                                    {{-- Phone Field --}}
+                                    <div x-show="!hasEmail">
+                                        <div class="flex">
+                                            <span class="inline-flex items-center px-4 rounded-l-2xl border border-r-0 border-slate-200 bg-slate-50 text-slate-500 text-sm font-bold">🇵🇭 +63</span>
+                                            <input type="tel" name="phone_number" value="{{ old('phone_number') }}"
+                                                class="block w-full rounded-r-2xl border-slate-200 p-3.5 text-sm focus:ring-sky-500 shadow-sm border @error('phone_number') border-rose-500 @enderror"
+                                                placeholder="9XXXXXXXXX" maxlength="10">
+                                        </div>
+                                        <p class="text-[9px] text-slate-400 font-bold mt-1 ml-1 uppercase tracking-widest">
+                                            2FA code will be sent via SMS
+                                        </p>
+                                        @error('phone_number') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {{-- Name Fields --}}
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- First Name --}}
-                            <div class="space-y-2">
-                                <label for="first_name" class="block text-sm font-medium text-gray-700">
-                                    First Name <span class="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="first_name" 
-                                    id="first_name" 
-                                    value="{{ old('first_name') }}"
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('first_name') border-red-500 @enderror" 
-                                    placeholder="Juan"
-                                    required
-                                >
-                                @error('first_name')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
+                        {{-- Name Section --}}
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">First Name *</label>
+                                <input type="text" name="first_name" value="{{ old('first_name') }}" class="block w-full rounded-2xl border-slate-200 p-3.5 text-sm shadow-sm border focus:ring-sky-500 @error('first_name') border-rose-500 @enderror" placeholder="Juan" required>
+                                @error('first_name') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
                             </div>
-
-                            {{-- Middle Name --}}
-                            <div class="space-y-2">
-                                <label for="middle_name" class="block text-sm font-medium text-gray-700">Middle Name</label>
-                                <input 
-                                    type="text" 
-                                    name="middle_name" 
-                                    id="middle_name" 
-                                    value="{{ old('middle_name') }}"
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
-                                    placeholder="Santos"
-                                >
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Middle Name</label>
+                                <input type="text" name="middle_name" value="{{ old('middle_name') }}" class="block w-full rounded-2xl border-slate-200 p-3.5 text-sm shadow-sm border focus:ring-sky-500" placeholder="Santos">
                             </div>
-
-                            {{-- Last Name --}}
-                            <div class="space-y-2">
-                                <label for="last_name" class="block text-sm font-medium text-gray-700">
-                                    Last Name <span class="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="last_name" 
-                                    id="last_name" 
-                                    value="{{ old('last_name') }}"
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('last_name') border-red-500 @enderror" 
-                                    placeholder="Dela Cruz"
-                                    required
-                                >
-                                @error('last_name')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Last Name *</label>
+                                <input type="text" name="last_name" value="{{ old('last_name') }}" class="block w-full rounded-2xl border-slate-200 p-3.5 text-sm shadow-sm border focus:ring-sky-500 @error('last_name') border-rose-500 @enderror" placeholder="Dela Cruz" required>
+                                @error('last_name') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
-                        {{-- Grade & Section Grid --}}
-                        <div 
-                            x-data="{ 
-                                grade: '{{ old('grade_level_id') }}', 
-                                section: '{{ old('section_id') }}', 
-                                allSections: {{ Js::from($sections) }} 
-                            }" 
-                            class="grid grid-cols-1 md:grid-cols-2 gap-4"
-                        >
-
-                            {{-- Grade Level Select --}}
-                            <div class="space-y-2">
-                                <label for="grade_level_id" class="block text-sm font-medium text-gray-700">
-                                    Grade Level <span class="text-red-500">*</span>
-                                </label>
-                                
-                                <select 
-                                    name="grade_level_id" 
-                                    id="grade_level_id" 
-                                    x-model="grade"
-                                    @change="section = ''" 
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    required
-                                >
-                                    <option value="">Select Grade</option>
-                                    @foreach($gradeLevels as $g)
-                                        <option value="{{ $g->id }}">{{ $g->name }}</option>
+                        {{-- Grade & Section --}}
+                        <div x-data="{ gradeLevel: '{{ old('grade_level_id') }}', sections: {{ Js::from($sections) }} }" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Grade Level *</label>
+                                <select name="grade_level_id" x-model="gradeLevel" required class="w-full rounded-2xl border-slate-200 p-3.5 text-sm shadow-sm border focus:ring-sky-500">
+                                    <option value="">Select Grade Level</option>
+                                    @foreach ($gradeLevels as $grade)
+                                        <option value="{{ $grade->id }}">{{ $grade->name }}</option>
                                     @endforeach
                                 </select>
-                                
-                                @error('grade_level_id')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
+                                @error('grade_level_id') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
                             </div>
-
-                            {{-- Section Select (Dynamic) --}}
-                            <div class="space-y-2">
-                                <label for="section_id" class="block text-sm font-medium text-gray-700">
-                                    Section <span class="text-red-500">*</span>
-                                </label>
-                                
-                                <select 
-                                    name="section_id" 
-                                    id="section_id" 
-                                    x-model="section"
-                                    :disabled="!grade"
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                                    required
-                                >
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Section / Strand *</label>
+                                <select name="section_id" :disabled="!gradeLevel" required class="w-full rounded-2xl border-slate-200 p-3.5 text-sm shadow-sm border focus:ring-sky-500 disabled:bg-slate-50 disabled:text-slate-300">
                                     <option value="">Select Section</option>
-                                    
-                                    {{-- Filter sections based on the selected grade ID --}}
-                                    <template x-for="s in allSections.filter(i => i.grade_level_id == grade)" :key="s.id">
-                                        <option :value="s.id" x-text="s.name"></option>
-                                    </template>
-                                    
-                                    {{-- Message if no sections exist for that grade --}}
-                                    <template x-if="grade && allSections.filter(i => i.grade_level_id == grade).length === 0">
-                                        <option disabled>No sections found</option>
+                                    <template x-for="s in sections.filter(sec => sec.grade_level_id == gradeLevel)" :key="s.id">
+                                        <option :value="s.id" x-text="s.name" :selected="s.id == '{{ old('section_id') }}'"></option>
                                     </template>
                                 </select>
-
-                                @error('section_id')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
+                                @error('section_id') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
                             </div>
-                        </div>
-
-                        {{-- Email --}}
-                        <div class="space-y-2">
-                            <label for="email" class="block text-sm font-medium text-gray-700">Email (Optional)</label>
-                            <input 
-                                type="email" 
-                                name="email" 
-                                id="email" 
-                                value="{{ old('email') }}"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
-                                placeholder="student@example.com"
-                            >
-                            @error('email')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         {{-- Password Section --}}
-                        <div class="space-y-2">
-                            <label for="password" class="block text-sm font-medium text-gray-700">
-                                Password <span class="text-red-500">*</span>
-                            </label>
-                            <div class="flex gap-2">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Security Password *</label>
+                            <div class="flex flex-col md:flex-row gap-3">
                                 <div class="flex-1 relative">
-                                    <input 
-                                        type="password" 
-                                        name="password" 
-                                        id="password" 
-                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-10 @error('password') border-red-500 @enderror" 
-                                        placeholder="Enter password"
-                                        required
-                                        minlength="6"
-                                    >
-                                    {{-- Toggle Visibility Button --}}
-                                    <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
-                                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    <input type="password" name="password" id="password" class="block w-full rounded-2xl border-slate-200 p-3.5 text-sm shadow-sm border focus:ring-sky-500 pr-12" placeholder="••••••••" required minlength="8">
+                                    <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 px-4 flex items-center text-slate-300 hover:text-sky-500 transition-colors">
+                                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
-                                        <svg id="eyeOffIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg id="eyeOffIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                         </svg>
                                     </button>
                                 </div>
-                                <button type="button" onclick="generatePassword()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Generate
-                                </button>
+                                <button type="button" onclick="generatePassword()" class="px-6 py-3.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-sky-600 transition-all shadow-lg active:scale-95">Auto-Generate</button>
                             </div>
-                            <p class="text-xs text-gray-500">Minimum 6 characters. Student will use this password to log in.</p>
-                            @error('password')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Profile Image --}}
-                        <div class="space-y-3">
-                            <label class="block text-sm font-medium text-gray-700">Profile Image (Optional)</label>
-                            
-                            <div class="flex items-start gap-4">
-                                {{-- Preview Area --}}
-                                <div class="flex-shrink-0">
-                                    <div id="imagePreviewContainer" class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-2 border-dashed border-blue-300 overflow-hidden relative group">
-                                        {{-- Default Icon --}}
-                                        <svg id="defaultUserIcon" xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        {{-- Actual Image Preview (Hidden by default) --}}
-                                        <img id="imagePreview" src="#" alt="Profile Preview" class="w-full h-full object-cover hidden">
-                                        
-                                        {{-- Remove Button --}}
-                                        <button type="button" onclick="removeImage()" id="removeImageBtn" class="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {{-- Upload Input --}}
-                                <div class="flex-1">
-                                    <div class="relative group">
-                                        <input 
-                                            type="file" 
-                                            name="photo_path" 
-                                            id="photo_path" 
-                                            accept="image/*"
-                                            onchange="handleImageUpload(this)"
-                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        >
-                                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <p class="text-sm font-medium text-gray-900">Click to upload profile image</p>
-                                                    <p class="text-xs text-gray-500 mt-0.5">PNG, JPG up to 5MB</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p id="uploadSuccessMsg" class="text-xs text-green-600 mt-2 items-center gap-1 hidden">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Image selected successfully
-                                    </p>
-                                    @error('photo_path')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Info Alert --}}
-                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-blue-700">
-                                        <strong>Note:</strong> Make sure to securely share the Student ID and Password with the student. They will need both to access the voting system.
-                                    </p>
-                                </div>
-                            </div>
+                            @error('password') <p class="text-[9px] text-rose-500 font-bold ml-1 uppercase">{{ $message }}</p> @enderror
                         </div>
 
                     </div>
 
-                    {{-- Form Actions --}}
-                    <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
-                        <a href="{{ route('dashboard.voters.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Cancel
-                        </a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Add Voter
-                        </button>
+                    <div class="flex items-center justify-end gap-4 pt-10 mt-10 border-t border-slate-50">
+                        <a href="{{ route('admin.voters.index') }}" class="px-6 py-3 font-black uppercase text-[10px] tracking-widest text-slate-400 hover:text-slate-600 transition">Cancel</a>
+                        <button type="submit" class="px-12 py-4 bg-sky-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-sky-100 hover:bg-sky-700 hover:-translate-y-0.5 transition-all">Register Voter</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- Script for Interactivity --}}
     <script>
-        // 1. Generate Student ID
         function generateStudentId() {
             const year = new Date().getFullYear();
             const randomNum = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('userID').value = `${year}${randomNum}`;
+            document.getElementById('student_id').value = `${year}${randomNum}`;
         }
 
-        // 2. Generate Password
         function generatePassword() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
             let password = '';
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 10; i++) {
                 password += chars.charAt(Math.floor(Math.random() * chars.length));
             }
-            const passwordInput = document.getElementById('password');
-            passwordInput.value = password;
-            
-            // If currently hidden, show it briefly so user sees the new password? 
-            // Or keep logic simple (user can toggle visibility manually)
-            if(passwordInput.type === 'password') {
-                togglePasswordVisibility();
-            }
+            const input = document.getElementById('password');
+            input.value = password;
+            input.type = 'text';
+            document.getElementById('eyeIcon').classList.add('hidden');
+            document.getElementById('eyeOffIcon').classList.remove('hidden');
         }
 
-        // 3. Toggle Password Visibility
         function togglePasswordVisibility() {
-            const passwordInput = document.getElementById('password');
-            const eyeIcon = document.getElementById('eyeIcon');
-            const eyeOffIcon = document.getElementById('eyeOffIcon');
-
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.classList.add('hidden');
-                eyeOffIcon.classList.remove('hidden');
+            const input = document.getElementById('password');
+            const eye = document.getElementById('eyeIcon');
+            const eyeOff = document.getElementById('eyeOffIcon');
+            if (input.type === 'password') {
+                input.type = 'text'; eye.classList.add('hidden'); eyeOff.classList.remove('hidden');
             } else {
-                passwordInput.type = 'password';
-                eyeIcon.classList.remove('hidden');
-                eyeOffIcon.classList.add('hidden');
+                input.type = 'password'; eye.classList.remove('hidden'); eyeOff.classList.add('hidden');
             }
         }
 
-        // 4. Image Preview Logic
         function handleImageUpload(input) {
             const file = input.files[0];
-            const defaultIcon = document.getElementById('defaultUserIcon');
-            const previewImg = document.getElementById('imagePreview');
+            const icon = document.getElementById('defaultUserIcon');
+            const preview = document.getElementById('imagePreview');
             const removeBtn = document.getElementById('removeImageBtn');
-            const successMsg = document.getElementById('uploadSuccessMsg');
-
             if (file) {
-                // Size validation (5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Image size should be less than 5MB');
-                    input.value = ''; // Reset input
-                    return;
-                }
-
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.classList.remove('hidden');
-                    defaultIcon.classList.add('hidden');
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    icon.classList.add('hidden');
                     removeBtn.classList.remove('hidden');
-                    successMsg.classList.remove('hidden');
-                    successMsg.classList.add('flex');
                 }
                 reader.readAsDataURL(file);
             }
@@ -391,18 +211,11 @@
 
         function removeImage() {
             const input = document.getElementById('photo_path');
-            const defaultIcon = document.getElementById('defaultUserIcon');
-            const previewImg = document.getElementById('imagePreview');
+            const icon = document.getElementById('defaultUserIcon');
+            const preview = document.getElementById('imagePreview');
             const removeBtn = document.getElementById('removeImageBtn');
-            const successMsg = document.getElementById('uploadSuccessMsg');
-
-            input.value = ''; // Clear file input
-            previewImg.src = '#';
-            previewImg.classList.add('hidden');
-            defaultIcon.classList.remove('hidden');
-            removeBtn.classList.add('hidden');
-            successMsg.classList.add('hidden');
-            successMsg.classList.remove('flex');
+            input.value = ''; preview.src = '#'; preview.classList.add('hidden');
+            icon.classList.remove('hidden'); removeBtn.classList.add('hidden');
         }
     </script>
 </x-app-layout>

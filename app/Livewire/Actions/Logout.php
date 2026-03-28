@@ -12,6 +12,7 @@ class Logout
      */
     public function __invoke(): void
     {
+        // Siguraduhing ang 'web' guard (Admin) ang nilo-logout
         Auth::guard('web')->logout();
 
         Session::invalidate();

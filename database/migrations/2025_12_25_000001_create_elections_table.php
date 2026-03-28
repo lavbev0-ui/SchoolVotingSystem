@@ -8,42 +8,43 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // ELECTIONS TABLE
+        // 1. ELECTIONS TABLE
         Schema::create('elections', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
+            // User ID ng admin na gumawa ng election
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade'); 
             $table->string('title');
-            $table->text('bio')->nullable();
-            $table->dateTime('start_at');
-            $table->dateTime('end_at');
-            // Stores: 'all', 'grade-level', 'section', or 'custom'
+            $table->text('description')->nullable(); // Pinalitan ang bio ng description para sa general info
+            $table->string('status')->default('active'); // Idinagdag ang status
+            $table->dateTime('start_at')->nullable();
+            $table->dateTime('end_at')->nullable()->index();
             $table->string('eligibility_type')->default('all'); 
-            // Stores the array of selected grades, sections, or student IDs
-            // Example: {"grades": ["11", "12"]} or {"sections": ["A", "B"]}
             $table->json('eligibility_metadata')->nullable(); 
-            $table->enum('status', ['upcoming', 'active', 'completed', 'archived'])->default('upcoming');
             $table->timestamps();
         });
 
-        // POSITIONS TABLE 
+        // 2. POSITIONS TABLE 
         Schema::create('positions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('election_id')->constrained('elections')->onDelete('cascade');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->integer('max_selection')->default(1); 
+            $table->integer('max_votes')->default(1); // Ginamit ang max_votes para tugma sa seeder error
             $table->timestamps();
         });
 
-        // CANDIDATES TABLE
+        // 3. CANDIDATES TABLE
         Schema::create('candidates', function (Blueprint $table) {
             $table->id();
+            // Voter link: Mahalaga ito para sa profile sync ng kandidato
+            $table->foreignId('voter_id')->nullable()->constrained('voters')->onDelete('cascade'); 
             $table->foreignId('position_id')->constrained('positions')->onDelete('cascade');
-            $table->string('name');
+            $table->string('first_name'); // Pinaghiwalay base sa Voter profile mo
+            $table->string('last_name');
             $table->foreignId('grade_level_id')->nullable()->constrained('grade_levels')->nullOnDelete();
-            $table->string('section_id')->nullable()->constrained('sections')->nullOnDelete();
+            $table->foreignId('section_id')->nullable()->constrained('sections')->nullOnDelete();
             $table->text('bio')->nullable();
-            $table->text('party')->nullable();
+            $table->string('party')->nullable();
             $table->text('platform')->nullable();
             $table->string('photo_path')->nullable();
             $table->timestamps();

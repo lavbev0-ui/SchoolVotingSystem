@@ -3,14 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>{{ config('app.name', 'Enhance Voting System') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
 
-    <!-- Tailwind -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -35,7 +34,7 @@
         <!-- Navigation -->
         <nav class="flex items-center gap-4">
             @auth('web')
-                <a href="{{ route('dashboard.index') }}"
+                <a href="{{ route('admin.index') }}"
                    class="px-6 py-2 rounded-lg border border-blue-600 text-blue-600 font-medium hover:bg-blue-600 hover:text-white transition">
                     Admin Dashboard
                 </a>
@@ -101,14 +100,11 @@
     <!-- ================= FEATURES ================= -->
     <section class="py-16 bg-yellow-50">
         <div class="max-w-7xl mx-auto px-6">
-
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
                 <!-- Feature 1 -->
                 <div class="p-6 bg-white rounded-xl border border-yellow-400/40 hover:shadow-md transition">
-                    <h3 class="text-xl font-semibold text-blue-900 mb-2">
-                        Secure & Private
-                    </h3>
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Secure & Private</h3>
                     <p class="text-gray-600">
                         Votes are encrypted and anonymous to maintain election integrity
                         and student privacy.
@@ -117,9 +113,7 @@
 
                 <!-- Feature 2 -->
                 <div class="p-6 bg-white rounded-xl border border-yellow-400/40 hover:shadow-md transition">
-                    <h3 class="text-xl font-semibold text-blue-900 mb-2">
-                        Easy to Use
-                    </h3>
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Easy to Use</h3>
                     <p class="text-gray-600">
                         Student-friendly interface designed for fast and easy voting
                         on any device.
@@ -128,9 +122,7 @@
 
                 <!-- Feature 3 -->
                 <div class="p-6 bg-white rounded-xl border border-yellow-400/40 hover:shadow-md transition">
-                    <h3 class="text-xl font-semibold text-blue-900 mb-2">
-                        Real-time Results
-                    </h3>
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Real-time Results</h3>
                     <p class="text-gray-600">
                         Transparent vote counting with real-time monitoring
                         for fair and trusted school elections.
@@ -148,6 +140,9 @@
     <div class="max-w-7xl mx-auto px-6 py-8 text-center">
         <p class="font-semibold text-blue-900">
             CATALINO D. CEREZO NATIONAL HIGH SCHOOL
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+            This system is developed by Beverly Ann Lavarias, Arvin Centeno, Charliane Melendez, Raven Cerezo
         </p>
         <p class="text-sm text-gray-500 mt-1">
             © {{ date('Y') }} Enhance Voting System. All rights reserved.
