@@ -23,11 +23,11 @@ RUN mkdir -p bootstrap/cache \
     storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache \
-    storage/logs \
-    && cp .env.example .env \
-    && php artisan key:generate \
-    && php artisan package:discover --ansi
+    storage/logs
 
 EXPOSE 8000
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php -r "file_put_contents('.env', implode(\"\n\", array_map(fn(\$k) => \"\$k=\" . getenv(\$k), array_keys(getenv()))));" \
+    && php artisan config:clear \
+    && php artisan migrate --force \
+    && php artisan serve --host=0.0.0.0 --port=$PORT
