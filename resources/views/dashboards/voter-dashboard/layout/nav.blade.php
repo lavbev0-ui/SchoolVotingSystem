@@ -35,7 +35,12 @@
                             class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 transition cursor-pointer">
                         <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-slate-200 shrink-0">
                             @if(auth('voter')->user()->photo_path)
-                                <img src="{{ asset('storage/' . auth('voter')->user()->photo_path) }}" class="w-full h-full object-cover">
+                                <img src="{{ asset('storage/' . auth('voter')->user()->photo_path) }}" 
+     class="w-full h-full object-cover"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+<div style="display:none;" class="w-full h-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-black text-sm uppercase">
+    {{ substr(auth('voter')->user()->first_name ?? 'S', 0, 1) }}
+</div>
                             @else
                                 <div class="w-full h-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-black text-sm uppercase">
                                     {{ substr(auth('voter')->user()->first_name ?? 'S', 0, 1) }}
