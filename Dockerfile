@@ -24,8 +24,8 @@ RUN echo "APP_NAME=SchoolVotingSystem" > .env \
     && echo "DB_DATABASE=laravel" >> .env \
     && echo "DB_USERNAME=root" >> .env \
     && echo "DB_PASSWORD=" >> .env \
-    && php artisan key:generate \
-    && composer install --optimize-autoloader --no-dev
+    && composer install --optimize-autoloader --no-dev \
+    && php artisan key:generate
 
 EXPOSE 8000
 
