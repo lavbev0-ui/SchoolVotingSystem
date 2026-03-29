@@ -30,4 +30,4 @@ RUN echo "APP_NAME=SchoolVotingSystem" > .env \
 
 EXPOSE 8000
 
-CMD php artisan config:cache && php artisan route:cache && php artisan serve --host=0.0.0.0 --port=$PORT
+CCMD php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=$PORT
