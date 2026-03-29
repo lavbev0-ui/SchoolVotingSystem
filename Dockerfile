@@ -15,7 +15,7 @@ COPY . .
 
 RUN echo "APP_NAME=SchoolVotingSystem" > .env \
     && echo "APP_ENV=production" >> .env \
-    && echo "APP_KEY=" >> .env \
+    && echo "APP_KEY=base64:Pi69KBPofkosb5ELja5NHUtSaG/00rNL8JqzkJB8SRE=" >> .env \
     && echo "APP_DEBUG=false" >> .env \
     && echo "APP_URL=http://localhost" >> .env \
     && echo "DB_CONNECTION=mysql" >> .env \
@@ -24,9 +24,10 @@ RUN echo "APP_NAME=SchoolVotingSystem" > .env \
     && echo "DB_DATABASE=laravel" >> .env \
     && echo "DB_USERNAME=root" >> .env \
     && echo "DB_PASSWORD=" >> .env \
-    && composer install --optimize-autoloader --no-dev \
-    && php artisan key:generate
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && composer install --optimize-autoloader --no-dev --no-scripts
 
 EXPOSE 8000
 
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan config:cache && php artisan route:cache && php artisan serve --host=0.0.0.0 --port=$PORT
