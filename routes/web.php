@@ -19,9 +19,7 @@ use App\Http\Controllers\CandidateImportController;
 use App\Http\Controllers\BackupController;
 
 // 1. PUBLIC ROUTES
-Route::get('/', function () {
-    return 'Hello World';
-})->name('welcome');
+Route::view('/', 'welcome')->name('welcome');
 
 // 2. STUDENT LOGIN (Guest only)
 Route::middleware('guest:voter')->group(function () {
