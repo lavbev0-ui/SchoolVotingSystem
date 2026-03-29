@@ -4,30 +4,29 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libpng-dev \
     libxml2-dev \
-    libpq-dev \
     curl \
     unzip \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip gd
+    && docker-php-ext-install pdo pdo_mysql zip gd
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-
-COPY composer.json composer.lock ./
-
-RUN composer install --optimize-autoloader --no-dev --no-scripts
-
 COPY . .
 
-RUN mkdir -p bootstrap/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/framework/cache \
-    storage/logs
+RUN echo "APP_NAME=SchoolVotingSystem" > .env \
+    && echo "APP_ENV=production" >> .env \
+    && echo "APP_KEY=" >> .env \
+    && echo "APP_DEBUG=false" >> .env \
+    && echo "APP_URL=http://localhost" >> .env \
+    && echo "DB_CONNECTION=mysql" >> .env \
+    && echo "DB_HOST=127.0.0.1" >> .env \
+    && echo "DB_PORT=3306" >> .env \
+    && echo "DB_DATABASE=laravel" >> .env \
+    && echo "DB_USERNAME=root" >> .env \
+    && echo "DB_PASSWORD=" >> .env \
+    && php artisan key:generate \
+    && composer install --optimize-autoloader --no-dev
 
 EXPOSE 8000
 
-CMD php -r "file_put_contents('.env', implode(\"\n\", array_map(fn(\$k) => \"\$k=\" . getenv(\$k), array_keys(getenv()))));" \
-    && php artisan config:clear \
-    && php artisan migrate --force \
-    && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
