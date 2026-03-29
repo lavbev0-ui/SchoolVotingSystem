@@ -13,7 +13,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-RUN composer install --optimize-autoloader --no-dev
+RUN cp .env.example .env \
+    && php artisan key:generate \
+    && composer install --optimize-autoloader --no-dev \
+    && php artisan config:clear
 
 EXPOSE 8000
 
